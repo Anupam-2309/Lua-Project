@@ -1,27 +1,33 @@
--- Function to create a matrix
-function createMatrix(n, m, initialValue)
+-- creating the function for Matrix 
+
+function createMatrix(n, m, values)
     local matrix = {}
+    local valueIndex = 1
+
     for i = 1, n do
         matrix[i] = {}
         for j = 1, m do
-            matrix[i][j] = initialValue or 0
+            if values and values[valueIndex] then
+                matrix[i][j] = values[valueIndex]
+                valueIndex = valueIndex + 1
+            else
+                matrix[i][j] = 0
+            end
         end
     end
+
     return matrix
 end
 
--- Example: Create a 3x3 matrix initialized to 0
-local matrixA = createMatrix(3, 3)
+local values = {1, 2, 3, 4,-4, 7, 8, 9}
+n = 2
+m = 4
+local matrixA = createMatrix(n, m, values)
 
--- Initialize matrixA with specific values
-matrixA[1][1] = 1; matrixA[1][2] = 2; matrixA[1][3] = 3
-matrixA[2][1] = 4; matrixA[2][2] = 5; matrixA[2][3] = 6
-matrixA[3][1] = 7; matrixA[3][2] = 8; matrixA[3][3] = 9
-
--- Print the Matrix
-for i = 1, #matrixA do
-    for j = 1, #matrixA[i] do
-        print(matrixA[i][j])
+-- Print the matrix to verify
+for i = 1, n do
+    for j = 1,m do
+        io.write(matrixA[i][j] .. " ")
     end
-    print()
+    io.write("\n")
 end
