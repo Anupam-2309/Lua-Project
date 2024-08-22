@@ -26,7 +26,7 @@ This repository includes a single Lua script (`lua_basics.lua`) that demonstrate
 
 # Lua Matrix Operations
 
-Welcome to the **Matrix.lua** file! This repository contains Lua code for creating and performing basic operations on matrices, such as addition, subtraction, multiplication, and transposition.
+Welcome to the **`Matrix.lua`** file! This repository contains Lua code for creating and performing basic operations on matrices, such as addition, subtraction, multiplication, and transposition.
 
 ## Features
 
