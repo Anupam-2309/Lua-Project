@@ -26,11 +26,11 @@ This repository includes a single Lua script (`lua_basics.lua`) that demonstrate
 
 # Lua Matrix Operations
 
-Welcome to the **Lua Matrix Operations** repository! This repository contains Lua code for creating and performing basic operations on matrices, such as addition, subtraction, multiplication, and transposition.
+Welcome to the **Matrix.lua** file! This repository contains Lua code for creating and performing basic operations on matrices, such as addition, subtraction, multiplication, and transposition.
 
 ## Features
 
-This project includes the following matrix operations:
+This file includes the following matrix operations:
 
 1. **Matrix Creation**: Easily create a matrix with specified dimensions and values.
 2. **Matrix Addition**: Add two matrices of the same size.
@@ -63,7 +63,7 @@ function createMatrix(n, m, values)
 
     return matrix
 end
-
+```
 
 ## Getting Started
 
