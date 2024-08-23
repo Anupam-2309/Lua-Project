@@ -82,6 +82,17 @@ function transposeMatrix(matrix)
     return result
 end
 
+-- For Printing Matrix 
+function printM(M)
+	n = #M
+	m = #M[1]
+	for i = 1, n do
+	    for j = 1, m do
+	        io.write(M[i][j] .. " ")
+	    end
+    io.write("\n")
+	end
+end
 
 -- Examples 
 
