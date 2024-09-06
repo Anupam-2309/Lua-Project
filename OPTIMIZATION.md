@@ -1,6 +1,6 @@
-# Bisection Method in LuaLaTeX
+# Optimization Method in Lua
 
-This repository contains a Lua implementation of the **Bisection Method** integrated with **LuaLaTeX** for solving nonlinear equations. The Bisection Method is a root-finding algorithm that iteratively narrows down an interval containing a root by halving the interval.
+This repository contains a Lua implementation of the **Optimization Method** integrated with **Lua** for solving nonlinear equations.
 
 ## Table of Contents
 - [Features](#features)
@@ -10,24 +10,18 @@ This repository contains a Lua implementation of the **Bisection Method** integr
 
 
 ## Features
-- A customizable Lua Bisection method that can solve different equations.
-- Integration with LaTeX using **LuaLaTeX**, allowing computation and typesetting within the same document.
-- Step-by-step output of the Bisection Method, including iteration data.
-
-## How It Works
-The Bisection Method works by repeatedly halving the interval `[a, b]` and checking if the midpoint contains the root. This process continues until the interval size is smaller than a given tolerance.
+- A customizable Lua optimization method that can solve different equations.
+- Step-by-step output of the various optimization Method.
 
 ### Steps:
 1. Define an equation `f(x)` in Lua.
-2. Run the Bisection method to solve `f(x) = 0` for a given interval `[a, b]`.
+2. Run any method to solve `f(x)` for a given interval `[a, b]`.
 3. The solution is found when the error between `a` and `b` becomes smaller than the tolerance.
 
-## Usage
-
-### Standalone Lua Script
-You can use the provided Lua script as a standalone implementation to solve equations using the Bisection Method.
-
 ## Example
+
+### Bisection Method
+
 To solve the equation $f(x)=x^3−2x−5$ on the interval [2,3], run the following Lua script:
 ```lua
 local equation = function(x)
@@ -37,4 +31,16 @@ end
 bisectionSolver = Bisection:new(2, 3, equation, 0.001)
 bisectionSolver:solve()
 
+```
+### Golden Section Search Method
+
+```lua
+-- Function to be minimized f(x) = (x - 2)^2
+function GoldenSectionSearch:f(x)
+    return (x - 3) ^ 2
+end
+
+-- Instantiate and run Golden Section Search
+goldenSectionSearch = GoldenSectionSearch:new(f,-5, 15, 10)
+goldenSectionSearch:search()
 ```
