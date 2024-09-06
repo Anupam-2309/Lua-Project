@@ -102,12 +102,4 @@ end
 -- m = 4
 -- local matrixA = createMatrix(n, m, values)
 
--- -- Print the matrix to verify
--- for i = 1, n do
---     for j = 1,m do
---         io.write(matrixA[i][j] .. " ")
---     end
---     io.write("\n")
--- end
-
--- print(#matrixA[1])
+-- printM(matrixA)
