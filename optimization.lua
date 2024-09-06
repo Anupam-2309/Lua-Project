@@ -30,17 +30,49 @@ function Bisection:solve()
 end
 
 -- Example 1: Solve f(x) = x^3 - 2x - 5
-local equation1 = function(x)
-    return x^3 - 2*x - 5
+-- local equation1 = function(x)
+--     return x^3 - 2*x - 5
+-- end
+
+-- bisectionSolver1 = Bisection:new(2, 3, equation1, 0.001)
+-- bisectionSolver1:solve()
+
+
+-----------------------------------------------------
+-- Define the GoldenSectionSearch class
+GoldenSectionSearch = {}
+GoldenSectionSearch.__index = GoldenSectionSearch
+
+-- Constructor for GoldenSectionSearch
+function GoldenSectionSearch:new(func,L, R, n)
+    local obj = { f = func ,L = L, R = R, n = n }
+    setmetatable(obj, GoldenSectionSearch)
+    return obj
 end
 
-bisectionSolver1 = Bisection:new(2, 3, equation1, 0.001)
-bisectionSolver1:solve()
-
--- Example 2: Solve f(x) = x^2 - 4
-local equation2 = function(x)
-    return x^2 - 4
+-- Golden section search logic
+function GoldenSectionSearch:search()
+    print(string.format("%-5s | %-12s | %-12s", "Iter", "L", "R"))
+    print(string.rep("-", 35))
+    
+    for i = 1, self.n do
+        local x2 = self.L + 0.618 * (self.R - self.L)
+        local x1 = self.L + self.R - x2
+        print(string.format("%-5d | %-12.6f | %-12.6f", i, self.L, self.R))
+        
+        if self:f(x1) <= self:f(x2) then
+            self.R = x2
+        else
+            self.L = x1
+        end
+    end
 end
 
-bisectionSolver2 = Bisection:new(0, 3, equation2, 0.001)
-bisectionSolver2:solve()
+-- -- Function to be minimized f(x) = (x - 2)^2
+-- function GoldenSectionSearch:f(x)
+--     return (x - 3) ^ 2
+-- end
+
+-- -- Instantiate and run Golden Section Search
+-- goldenSectionSearch = GoldenSectionSearch:new(f,-5, 15, 10)
+-- goldenSectionSearch:search()
