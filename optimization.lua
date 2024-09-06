@@ -38,12 +38,12 @@ end
 -- bisectionSolver1:solve()
 
 
------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- Define the GoldenSectionSearch class
 GoldenSectionSearch = {}
 GoldenSectionSearch.__index = GoldenSectionSearch
 
--- Constructor for GoldenSectionSearch
+-- Constructor
 function GoldenSectionSearch:new(func,L, R, n)
     local obj = { f = func ,L = L, R = R, n = n }
     setmetatable(obj, GoldenSectionSearch)
@@ -60,7 +60,7 @@ function GoldenSectionSearch:search()
         local x1 = self.L + self.R - x2
         print(string.format("%-5d | %-12.6f | %-12.6f", i, self.L, self.R))
         
-        if self:f(x1) <= self:f(x2) then
+        if self.f(x1) <= self.f(x2) then
             self.R = x2
         else
             self.L = x1
@@ -69,10 +69,10 @@ function GoldenSectionSearch:search()
 end
 
 -- -- Function to be minimized f(x) = (x - 2)^2
--- function GoldenSectionSearch:f(x)
+-- local equation1 = function(x)
 --     return (x - 3) ^ 2
 -- end
 
 -- -- Instantiate and run Golden Section Search
--- goldenSectionSearch = GoldenSectionSearch:new(f,-5, 15, 10)
+-- goldenSectionSearch = GoldenSectionSearch:new(equation1,-5, 15, 10)
 -- goldenSectionSearch:search()
