@@ -1,5 +1,7 @@
 # Optimization Method in Lua
 
+Lua script (`optimization.lua`) that demonstrates various methods
+
 This repository contains a Lua implementation of the **Optimization Method** integrated with **Lua** for solving nonlinear equations.
 
 ## Table of Contents
