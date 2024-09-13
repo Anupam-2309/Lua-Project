@@ -80,11 +80,11 @@ end
 
 
 -- ==============================================================================================================
-Finbonacci_Search = {}
+Fibonacci_search = {}
 
-Finbonacci_Search.__index = Finbonacci_Search
+Fibonacci_search.__index = Fibonacci_search
 
-function Finbonacci_Search:value(n)
+function Fibonacci_search:value(n)
     local fib = {0,1}
     for i = 2,n do
         table.insert(fib,fib[#fib] + fib[#fib-1])
@@ -92,13 +92,13 @@ function Finbonacci_Search:value(n)
     return fib
 end
 
-function Finbonacci_Search:new(func,a,b,n,tolerance)
+function Fibonacci_search:new(func,a,b,n,tolerance)
     local obj = {f = func,a = a,b = b,n = n,tol = tolerance or 1e-5,iterations = {}}
-    setmetatable(obj,Finbonacci_Search)
+    setmetatable(obj,Fibonacci_search)
     return obj
 end
 
-function Finbonacci_Search:solve()
+function Fibonacci_search:solve()
     local fib = self:value(self.n)
     if #fib < self.n then
         error("Fibonacci sequence length mismatch")
@@ -121,7 +121,7 @@ function Finbonacci_Search:solve()
     return iteration
 end
 
-function Finbonacci_Search:pretty_print()
+function Fibonacci_search:pretty_print()
     if #self.iterations == 0 then
         self:solve() -- Solve if not already solved
     end
@@ -136,7 +136,7 @@ end
 --     return x^3 -2 *x -5
 -- end
 
--- local search = Finbonacci_Search:new(f, 2, 3, 15)
+-- local search = Fibonacci_search:new(f, 2, 3, 15)
 -- search:solve()  
 -- search:pretty_print() 
 
