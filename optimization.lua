@@ -193,4 +193,165 @@ end
 -- local search = Quadratic_Interpolation:new(f, 2, 3, 1e-3)
 -- search:pretty_print()
 
+-- -- =========================================================================================
+
+Equal_In_search = {}
+
+Equal_In_search.__index = Equal_In_search
+
+function Equal_In_search:new(func,a,b,epsilon)
+    local obj = {f = func,a = a, b = b , e = epsilon or 0.1}
+    setmetatable(obj,Equal_In_search)
+    return obj
+end
+
+function Equal_In_search:search()
+    iterations = {}
+
+    local i = 1
+
+    while (self.b-self.a) >= self.e do 
+        local x1 = self.a + (self.b - self.a)/3
+        local x2 = self.b - (self.b - self.a)/3
+
+        local f_x1 = self.f(x1)
+        local f_x2 = self.f(x2)
+
+        table.insert(iterations,{i,self.a,x1,x2,self.b,f_x1,f_x2})
+
+        if f_x1 <= f_x2 then
+            self.b = x2
+        else
+            self.a = x1
+        end
+
+        i = i+1
+    end
+    return iterations
+end
+
+function Equal_In_search:pretty_print(iterations)
+    print(string.format("%-3s | %-10s | %-10s | %-10s | %-10s | %-10s | %-10s", "Iter", "a", "x1", "x2", "b", "f(x1)", "f(x2)"))
+    print(string.rep("-", 75))
+    for _, row in ipairs(iterations) do
+        print(string.format("%-3d | %-10.5f | %-10.5f | %-10.5f | %-10.5f | %-10.5f | %-10.5f", 
+            row[1], row[2], row[3], row[4], row[5], row[6], row[7]))
+    end
+end
+
+-- -- Define the function
+-- function f(x)
+--     return 1 - x * math.exp(-x^2) - 0.5
+-- end
+
+-- -- Set up the problem
+-- a = 0.2
+-- b = 1.8
+-- e = 0.1
+
+-- -- Create an Equal Interval Search object
+-- search_instance = Equal_In_search:new(f, a, b, e)
+
+-- -- Perform the search
+-- iterations = search_instance:search()
+
+-- -- Pretty print the result
+-- search_instance:pretty_print(iterations)
+
+-- ===============================================================================
+
+RandomWalkOptimization = {}
+RandomWalkOptimization.__index = RandomWalkOptimization
+
+-- Constructor
+function RandomWalkOptimization:new(func, X1, lambda, epsilon, max_iterations)
+    local obj = {
+        f = func,
+        X1 = X1, -- Initial guess
+        lambda = lambda or 0.5,
+        epsilon = epsilon or 0.01,
+        max_iterations = max_iterations or 100,
+        iteration = 1
+    }
+    setmetatable(obj, RandomWalkOptimization)
+    return obj
+end
+
+-- Helper function to compute vector norm
+function RandomWalkOptimization:norm(vec)
+    local sum = 0
+    for i = 1, #vec do
+        sum = sum + vec[i] * vec[i]
+    end
+    return math.sqrt(sum)
+end
+
+-- Helper function to generate a random unit vector
+function RandomWalkOptimization:random_unit_vector(n)
+    while true do
+        local r = {}
+        for i = 1, n do
+            table.insert(r, math.random() * 2 - 1) -- Random number in [-1, 1]
+        end
+        local R = self:norm(r) -- Compute the norm of the vector
+        if R <= 1 then
+            for i = 1, n do
+                r[i] = r[i] / R -- Normalize to create a unit vector
+            end
+            return r
+        end
+    end
+end
+
+-- Search method
+function RandomWalkOptimization:search()
+    local f1 = self.f(self.X1)
+    local n = #self.X1 -- Dimensionality of the problem
+
+    while self.lambda > self.epsilon and self.iteration <= self.max_iterations do
+        -- Generate a random unit vector
+        local u = self:random_unit_vector(n)
+
+        -- Compute new point and function value
+        local X_new = {}
+        for i = 1, n do
+            X_new[i] = self.X1[i] + self.lambda * u[i]
+        end
+
+        local f_new = self.f(X_new)
+
+        -- Compare function values
+        if f_new < f1 then
+            self.X1 = X_new
+            f1 = f_new
+        else
+            self.iteration = self.iteration + 1
+        end
+
+        -- Check if maximum iterations reached
+        if self.iteration > self.max_iterations then
+            self.lambda = self.lambda / 2
+            self.iteration = 1 -- Reset iteration counter
+        end
+    end
+
+    return self.X1, f1
+end
+
+-- Example function
+-- function example_function(X)
+--     -- Example: A simple quadratic function
+--     return (X[1] - X[2] + 2 * X[1]^2 + 2 * X[2] * X[1] + X[2]^2)
+-- end
+
+-- -- Initial guess (X1)
+-- local initial_guess = {0.0, 0.0}
+
+-- -- Create a Random Walk Optimization instance
+-- local random_walk = RandomWalkOptimization:new(example_function, initial_guess)
+
+-- -- Perform the search
+-- local X_min, f_min = random_walk:search()
+
+-- print(string.format("Estimated minimum at X = [%.8f, %.8f] with f(X) = %.12f", X_min[1], X_min[2], f_min))
 
