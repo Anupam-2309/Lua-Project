@@ -1,0 +1,89 @@
+\documentclass{article}
+\usepackage{luacode}
+
+\begin{document}
+\title{LuaLatex Package Development}
+\author{Anupam Maurya}
+\date{\today}
+\maketitle
+\tableofcontents
+\newpage
+\section{Litreature Review}
+
+\subsection{Lua}
+Lua is a lightweight, efficient, and embeddable scripting language, particularly useful for mathematical and computational tasks due to its powerful yet simple syntax, fast execution, and ease of integration. Lua's core is built to support real-time applications, making it ideal for iterative mathematical computations and simulations.
+
+In LaTeX package development, Lua is invaluable through the LuaTeX engine, which extends TeX with Lua scripting capabilities. LuaTeX allows package developers to create dynamic, programmable content within LaTeX documents. With Lua, developers can manage complex operations like custom page layouts, interactive documents, data processing, and mathematical computations directly in LaTeX. This is especially powerful for applications requiring real-time or conditional formatting, advanced typography, and custom math environments.
+
+The combination of LaTeX and Lua's scripting abilities enhances LaTeX's capabilities beyond traditional static document preparation, making it a versatile tool for researchers and developers creating interactive and computationally intensive documents.
+
+\subsection{LuaLatex}
+LuaTeX is a TeX-based typesetting engine that incorporates the Lua scripting language, enhancing TeX’s traditional capabilities with scripting, programming logic, and access to system-level functionalities. LuaTeX is primarily used in LaTeX through the LuaLaTeX format, which allows LaTeX users to tap into Lua for custom scripting within their documents. This integration brings flexibility and dynamism that is hard to achieve with traditional TeX alone.
+
+\subsection*{Key Features of LuaTeX/LuaLaTeX:}
+\begin{itemize}
+	\item \textbf{Enhanced Control}: LuaTeX gives developers precise control over typesetting, font management, and layout customization. For example, Lua can control page-breaking algorithms to ensure optimal spacing and layout.
+	
+	\item \textbf{ Advanced Math Support}: LuaLaTeX can handle complex mathematical calculations directly, simplifying processes that previously required external programs or tools.
+	
+	\item \textbf{Dynamic Document Creation:} Lua enables document properties to be generated or modified based on input data, useful in templates, reports, or repetitive documents.
+	
+\end{itemize}
+\subsection*{Source Code}
+Here’s an example showing how Lua scripting within LuaLaTeX can customize document behavior:
+
+\begin{verbatim}
+	\documentclass{article}
+	\usepackage{luacode} % Allows embedding Lua code in LaTeX
+	
+	\begin{document}
+		% Basic LaTeX text
+		Hello, this document has custom page numbering using Lua!
+		
+		% Lua script for page numbering
+		\begin{luacode}
+			function customPageNumber()
+			return "Page " .. tex.count[0] .. " of an Amazing Document!"
+			end
+		\end{luacode}
+		
+		\makeatletter
+		\renewcommand{\@oddfoot}{\directlua{tex.print(customPageNumber())}}
+		\makeatother
+		
+		% Content to fill multiple pages
+		\newpage
+		This is page 2.
+		\newpage
+		This is page 3.
+	\end{document}
+	
+\end{verbatim}
+In this example:
+\begin{itemize}
+	\item LuaLaTeX’s \verb|\directlua| command runs Lua code directly, integrating custom logic into the LaTeX document.
+	\item The \verb|customPageNumber| function creates a personalized footer with the current page count.
+\end{itemize}
+
+\section*{Practical Applications}
+\begin{enumerate}
+	\item \textbf{Automating Reports}: Lua can dynamically pull data, perform calculations, and format them within a LaTeX document---ideal for automated report generation.
+	\item \textbf{Custom Layouts}: Lua scripting enables fully customized layouts by adjusting spacing, font styles, and positioning dynamically based on content or user input.
+	\item \textbf{Enhanced Math and Graphics}: Lua’s computational ability lets it dynamically render mathematical symbols or graphics, creating interactive and responsive content in educational materials or research publications.
+\end{enumerate}
+
+\subsection{Luacode Package}
+The \verb*|luacode| package in LaTeX provides an easy way to include Lua code within a LaTeX document, making it possible to write and run Lua scripts directly from LaTeX. This package is very useful in LuaLaTeX, as it helps simplify embedding Lua code for custom document features, calculations, and automation.
+
+\subsection{Basic Usage of luacode}
+The \verb*|luacode| package allows Lua code to be embedded in two main ways:
+
+\begin{enumerate}
+	\item Inline Lua code using \verb|\directlua|
+	\item Block Lua code using the \verb|luacode| environment.
+\end{enumerate}
+
+\subsection*{Inline Lua Code}
+You can use \verb*|\directlua| to run small snippets of Lua code directly within LaTeX.
+\end{document}
+
