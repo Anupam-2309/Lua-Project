@@ -1,0 +1,606 @@
+% statistix.sty
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{statistix}[2024/11/24 Statistical Package in LuaLaTeX]
+
+\usepackage{luacode}
+\usepackage{pgfplots} % For plotting graphs
+\pgfplotsset{compat=1.18}
+
+
+% Define the Lua functions in the preamble
+\begin{luacode*}
+-- ==============Rounding Function=============
+function round(value, decimal_places)
+    local multiplier = 10 ^ decimal_places
+    return math.floor(value * multiplier + 0.5) / multiplier
+end
+
+-- ================Calculate the mean of an array============
+function mean(array)
+    local sum = 0
+    for _, v in ipairs(array) do
+        sum = sum + v
+    end
+    return round(sum / #array,5)
+end
+
+-- =================Calculate the median of an array=============
+function median(array)
+    table.sort(array)
+    local n = #array
+    if n % 2 == 1 then
+        return array[(n + 1) // 2]
+    else
+        return (array[n // 2] + array[n // 2 + 1]) / 2
+    end
+end
+
+-- ==================Calculate the mode of an array=================
+function mode(array)
+    local counts = {}
+    for _, v in ipairs(array) do
+        counts[v] = (counts[v] or 0) + 1
+    end
+    local maxCount = 0
+    local modes = {}
+    for k, v in pairs(counts) do
+        if v > maxCount then
+            maxCount = v
+            modes = {k}
+        elseif v == maxCount then
+            table.insert(modes, k)
+        end
+    end
+    return modes
+end
+
+-- =====================Calculate the variance of an array================
+function variance(array)
+    local avg = mean(array)
+    local sum = 0
+    for _, v in ipairs(array) do
+        sum = sum + (v - avg) ^ 2
+    end
+    return round(sum / #array,5)
+end
+
+-- ================Calculate the standard deviation of an array===============
+function standard_deviation(array)
+    return round(math.sqrt(variance(array)),5)
+end
+
+-- ===================Calculate the range of an array===============
+function range(array)
+    table.sort(array)
+    return array[#array] - array[1]
+end
+
+-- ==============Calculate quartiles of an array===============
+function quartiles(array)
+    table.sort(array)
+    local n = #array
+    local Q2 = median(array)
+    local Q1, Q3
+    if n % 2 == 0 then
+        Q1 = median({table.unpack(array, 1, n // 2)})
+        Q3 = median({table.unpack(array, n // 2 + 1, n)})
+    else
+        Q1 = median({table.unpack(array, 1, (n - 1) // 2)})
+        Q3 = median({table.unpack(array, (n + 3) // 2, n)})
+    end
+    return Q1, Q2, Q3
+end
+
+-- =================Calculate interquartile range (IQR)==============
+function iqr(array)
+    local q1, _, q3 = quartiles(array)
+    return q3 - q1
+end
+
+\end{luacode*}
+
+% Define LaTeX commands to call the Lua functions
+\newcommand{\Mean}[1]{\directlua{tex.print(mean({#1}))}}
+\newcommand{\Median}[1]{\directlua{tex.print(median({#1}))}}
+\newcommand{\Mode}[1]{%
+\directlua{
+local modes = mode({#1})
+tex.print(table.concat(modes, ", "))
+}
+}
+\newcommand{\Variance}[1]{\directlua{tex.print(variance({#1}))}}
+\newcommand{\SD}[1]{\directlua{tex.print(standard_deviation({#1}))}}
+\newcommand{\Range}[1]{\directlua{tex.print(range({#1}))}}
+\newcommand{\Quartiles}[1]{%
+\directlua{
+local Q1, Q2, Q3 = quartiles({#1})
+tex.print("Q1: ", Q1, ", Q2: ", Q2, ", Q3: ", Q3)
+}
+}
+\newcommand{\IQR}[1]{\directlua{tex.print(iqr({#1}))}}
+
+% Functions for advanced statistics: Skewness and Kurtosis
+\begin{luacode*}
+-- ================ Calculate skewness =========
+function skewness(array)
+    local n = #array
+    local avg = mean(array)
+    local sd = standard_deviation(array)
+    local skew_sum = 0
+    for _, v in ipairs(array) do
+        skew_sum = skew_sum + ((v - avg) / sd) ^ 3
+    end
+    return (n / ((n - 1) * (n - 2))) * skew_sum
+end
+
+-- =========== Calculate kurtosis ===========
+function kurtosis(array)
+    local n = #array
+    local avg = mean(array)
+    local sd = standard_deviation(array)
+    local kurt_sum = 0
+    for _, v in ipairs(array) do
+        kurt_sum = kurt_sum + ((v - avg) / sd) ^ 4
+    end
+    return ((n * (n + 1)) / ((n - 1) * (n - 2) * (n - 3))) * kurt_sum - (3 * (n - 1) ^ 2) / ((n - 2) * (n - 3))
+end
+\end{luacode*}
+
+\newcommand{\Skewness}[1]{\directlua{tex.print(skewness({#1}))}}
+\newcommand{\Kurtosis}[1]{\directlua{tex.print(kurtosis({#1}))}}
+
+% Correlation, covariance, linear regression, and t-test functions
+
+\begin{luacode*}
+-- ==========Compute Pearson correlation coefficient==============
+function correlation(array1, array2)
+    local n = #array1
+    local mean1 = mean(array1)
+    local mean2 = mean(array2)
+    local sum_xy, sum_x2, sum_y2 = 0, 0, 0
+
+    for i = 1, n do
+        sum_xy = sum_xy + (array1[i] - mean1) * (array2[i] - mean2)
+        sum_x2 = sum_x2 + (array1[i] - mean1) ^ 2
+        sum_y2 = sum_y2 + (array2[i] - mean2) ^ 2
+    end
+
+    return round(sum_xy / math.sqrt(sum_x2 * sum_y2),5)
+end
+
+-- ========================Compute covariance====================
+function covariance(array1, array2)
+    local n = #array1
+    local mean1 = mean(array1)
+    local mean2 = mean(array2)
+    local sum_cov = 0
+
+    for i = 1, n do
+        sum_cov = sum_cov + (array1[i] - mean1) * (array2[i] - mean2)
+    end
+
+    return round(sum_cov / (n - 1),5)
+end
+
+-- ==================Perform linear regression======================
+function linear_regression(array_x, array_y)
+    local n = #array_x
+    local mean_x = mean(array_x)
+    local mean_y = mean(array_y)
+    local sum_xy, sum_x2 = 0, 0
+
+    for i = 1, n do
+        sum_xy = sum_xy + (array_x[i] - mean_x) * (array_y[i] - mean_y)
+        sum_x2 = sum_x2 + (array_x[i] - mean_x) ^ 2
+    end
+
+    local slope = sum_xy / sum_x2
+    local intercept = mean_y - slope * mean_x
+
+    return round(slope,5), round(intercept,5)
+end
+
+-- ===================Independent samples T-test===================
+function independent_t_test(array1, array2)
+    local mean1, mean2 = mean(array1), mean(array2)
+    local variance1, variance2 = variance(array1), variance(array2)
+    local n1, n2 = #array1, #array2
+    local pooled_se = math.sqrt((variance1 / n1) + (variance2 / n2))
+    local t_statistic = (mean1 - mean2) / pooled_se
+
+    return round(t_statistic,5), round(mean1,5), round(mean2,5), round(variance1,5), round(variance2,5),round(pooled_se,5)
+end
+
+-- ==================Paired samples T-test==========================
+function paired_t_test(array1, array2)
+    if #array1 ~= #array2 then
+        error("Paired T-test requires arrays of the same length")
+    end
+
+    local differences = {}
+    for i = 1, #array1 do
+        table.insert(differences, array1[i] - array2[i])
+    end
+
+    local mean_diff = mean(differences)
+    local variance_diff = variance(differences)
+    local n = #differences
+    local se_diff = math.sqrt(variance_diff / n)
+    local t_statistic = mean_diff / se_diff
+
+    return round(t_statistic,5), round(mean_diff,5), round(variance_diff,5), round(se_diff,5)
+end
+
+-- ======================One-sample T-test================
+function one_sample_t_test(array, population_mean)
+    local mean1 = mean(array)
+    local variance1 = variance(array)
+    local n = #array
+    local se = math.sqrt(variance1 / n)
+    local t_statistic = (mean1 - population_mean) / se
+
+    return round(t_statistic,5), round(mean1,5), round(variance1,5), round(se,5)
+end
+
+\end{luacode*}
+
+% Commands for statistical tests
+\newcommand{\Correlation}[2]{\directlua{tex.print(correlation({#1}, {#2}))}}
+\newcommand{\Covariance}[2]{\directlua{tex.print(covariance({#1}, {#2}))}}
+\newcommand{\Regression}[2]{%
+\directlua{
+local slope, intercept = linear_regression({#1}, {#2})
+tex.print("Slope: ", slope, ", Intercept: ", intercept)
+}
+}
+
+\newcommand{\Ttest}[3]{%
+	\directlua{%
+	local test_type = "#3"
+	local data1 = {#1}
+	local data2_or_population_mean = {#2}
+	local t_statistic, mean1, mean2, variance1, variance2, se, mean_diff, variance_diff
+	
+	if test_type == "independent" then
+	t_statistic, mean1, mean2, variance1, variance2, se = independent_t_test(data1, data2_or_population_mean)
+	tex.print("\\begin{tabular}{p{7cm}p{5cm}}")
+	tex.print("\\hline \\hline")
+	tex.print("\\textbf{Statistic} & \\textbf{Value} \\\\ \\hline")
+	tex.print("Mean of Group One & " .. mean1 .. " \\\\")
+	tex.print("Mean of Group Two & " .. mean2 .. " \\\\")
+	tex.print("Variance of Group One & " .. variance1 .. " \\\\")
+	tex.print("Variance of Group Two & " .. variance2 .. " \\\\")
+	tex.print("Pooled Standard Error & " .. se .. " \\\\")
+	tex.print("t-Statistic & " .. t_statistic .. " \\\\ \\hline")
+	tex.print("\\end{tabular}") % ============== Independent ============
+	elseif test_type == "paired" then
+	t_statistic, mean_diff, variance_diff, se = paired_t_test(data1, data2_or_population_mean)
+	tex.print("\\begin{tabular}{p{7cm}p{5cm}}")
+	tex.print("\\hline")
+	tex.print("\\hline")
+	tex.print("\\textbf{Statistic} & \\textbf{Value} \\\\ \\hline")
+	tex.print("Mean Difference & " .. mean_diff .. " \\\\")
+	tex.print("Variance of Differences & " .. variance_diff .. " \\\\")
+	tex.print("Standard Error of Differences & " .. se .. " \\\\")
+	tex.print("t-Statistic & " .. t_statistic .. " \\\\ \\hline")
+	tex.print("\\end{tabular}") % =================paired ==============
+	elseif test_type == "one-sample" then
+	t_statistic, mean1, variance1, se = one_sample_t_test(data1, tonumber(data2_or_population_mean))
+	tex.print("\\begin{tabular}{|l|c|}")
+	tex.print("\\hline")
+	tex.print("\\textbf{Statistic} & \\textbf{Value} \\\\ \\hline")
+	tex.print("Sample Mean & " .. mean1 .. " \\\\ \\hline")
+	tex.print("Sample Variance & " .. variance1 .. " \\\\ \\hline")
+	tex.print("Standard Error & " .. se .. " \\\\ \\hline")
+	tex.print("t-Statistic & " .. t_statistic .. " \\\\ \\hline")
+	tex.print("\\end{tabular}")
+	else
+	tex.print("Invalid test type specified!")
+	end
+}
+}
+
+% Chi-Square Test and ANOVA functions
+\begin{luacode*}
+-- =========================Chi-Square Test==============
+function chi_square(observed, expected)
+    local sum = 0
+    for i = 1, #observed do
+        local diff = observed[i] - expected[i]
+        sum = sum + (diff ^ 2 / expected[i])
+    end
+    return round(sum,5)
+end
+
+-- ==================Exponential Moving Average (EMA)============
+function exponential_moving_average(array, alpha)
+    local ema = array[1] -- Start EMA with the first element
+    for i = 2, #array do
+        ema = alpha * array[i] + (1 - alpha) * ema
+    end
+    return ema
+end
+
+--=================== Weighted Mean=====================
+function weighted_mean(array, weights)
+    local sum_weighted_values = 0
+    local sum_weights = 0
+    for i = 1, #array do
+        sum_weighted_values = sum_weighted_values + array[i] * weights[i]
+        sum_weights = sum_weights + weights[i]
+    end
+    return sum_weighted_values / sum_weights
+end
+
+--=================== Z-Scores=================
+function z_scores(array)
+    local avg = mean(array)
+    local sd = standard_deviation(array)
+    local z_scores_array = {}
+    for _, v in ipairs(array) do
+        table.insert(z_scores_array, round((v - avg)/sd,5))
+    end
+    return z_scores_array
+end
+
+\end{luacode*}
+
+% Commands for additional statistical tests
+\newcommand{\ChiSquare}[2]{\directlua{tex.print(chi_square({#1}, {#2}))}}
+
+\newcommand{\EMA}[2]{\directlua{tex.print(exponential_moving_average({#1}, #2))}}
+\newcommand{\WeightedMean}[2]{\directlua{tex.print(weighted_mean({#1}, {#2}))}}
+\newcommand{\ZScores}[1]{%
+\directlua{
+local z_scores_array = z_scores({#1})
+tex.print(table.concat(z_scores_array, ", "))
+}
+}
+% ==================ANOVA =====================
+\begin{luacode*}
+function one_way_anova(data)
+    -- Input validation
+    if not data or #data < 2 then
+        return nil, "Need at least 2 groups"
+    end
+    
+    local total_sum, total_count = 0, 0
+    for _, group in ipairs(data) do
+        if #group < 1 then return nil, "Empty group found" end
+        for _, value in ipairs(group) do
+            if type(value) ~= "number" then
+                return nil, "Non-numeric value found"
+            end
+            total_sum = total_sum + value
+            total_count = total_count + 1
+        end
+    end
+    
+    -- Rest of calculation with improved precision
+    local grand_mean = total_sum / total_count
+    local SSB, SSE = 0, 0
+    for _, group in ipairs(data) do
+        local group_sum = 0
+        for _, value in ipairs(group) do
+            group_sum = group_sum + value
+        end
+        local group_mean = group_sum / #group
+        SSB = SSB + #group * (group_mean - grand_mean)^2
+        for _, value in ipairs(group) do
+            SSE = SSE + (value - group_mean)^2
+        end
+    end
+    
+    local df_between = #data - 1
+    local df_within = total_count - #data
+    local MSB = round(SSB / df_between,5)
+    local MSE = round(SSE / df_within,5)
+    local F = round(MSB / MSE,5)
+    
+    return {
+        SSB = round(SSB,5),
+        SSE = round(SSE,5),
+        df_between = df_between,
+        df_within = df_within,
+        MSB = MSB,
+        MSE = MSE,
+        F = F
+    }
+end
+
+-- Two-Way ANOVA in Lua
+function two_way_anova(data)
+    -- Calculate grand mean
+    local a = #data
+    local b = #data[1]
+    
+    local total_sum, total_count = 0, 0
+    for _, row in ipairs(data) do
+        for _, value in ipairs(row) do
+            total_sum = total_sum + value
+            total_count = total_count + 1
+        end
+    end
+    local grand_mean = total_sum / total_count
+    local C = total_sum^2/total_count
+    
+    -- Initialize sum of squares
+    local SSA, SSB, SSE = 0, 0, 0
+
+    --SST
+    local SS = 0
+    for _,row in ipairs(data) do 
+        for _,value in ipairs(row) do
+            SS = SS + value^2
+        end
+    end
+    local SST = SS - C
+
+    -- Calculate row sums
+    local row_sums = {}
+    for i, row in ipairs(data) do
+        local sum = 0
+        for _, value in ipairs(row) do
+            sum = sum + value
+        end
+        table.insert(row_sums, sum)
+    end
+    
+    -- Calculate column sums
+    local col_sums = {}
+    local num_cols = #data[1]
+    for j = 1, num_cols do
+        local sum = 0
+        for i = 1, #data do
+            sum = sum + data[i][j]
+        end
+        table.insert(col_sums, sum)
+    end
+    
+    -- SSA
+    local ssa = 0
+    for _,i in ipairs(row_sums) do 
+        ssa = ssa + (i^2)/b
+    end
+    SSA = ssa - C
+
+    -- SSB
+    local ssb = 0
+    for _,i in ipairs(col_sums) do 
+        ssb = ssb + (i^2)/a
+    end
+    SSB = ssb - C
+    SSE = SST - SSA -SSB
+
+    -- Degrees of freedom
+    local df_A = a-1
+    local df_B = b-1
+    local df_total = total_count -1
+    local df_within = df_total - df_A - df_B 
+    
+    -- Mean squares
+    local MSA = SSA / df_A
+    local MSB = SSB / df_B
+    local MSE = SSE / df_within
+    
+    -- F-statistics
+    local F_A = MSA / MSE
+    local F_B = MSB / MSE
+    
+    -- Return results
+    return {
+        SSA = round(SSA,5), SSB = round(SSB,5), SST = round(SST,5), SSE = round(SSE,5),
+        df_A = df_A, df_B = df_B, df_within = df_within, df_total = df_total,
+        MSA =round(MSA,5), MSB = round(MSB,5), MSE = round(MSE,5),
+        F_A = round(F_A,5), F_B = round(F_B,5)
+    }
+end
+
+\end{luacode*}
+
+\newcommand{\OneWayANOVA}[1]{%
+  \directlua{
+    local result = one_way_anova(#1)
+    tex.print("\\\\")
+    tex.print("\\begin{tabular}{p{4cm}p{2cm}p{1cm}p{2cm}p{1cm}}")
+    tex.print("\\hline \\hline")
+    tex.print("\\textbf{Statistic} & \\textbf{Sum of Squares} & \\textbf{df} & \\textbf{Mean Square} & \\textbf{F} \\\\ \\hline")
+    tex.print("Groups & " .. result.SSB .. " & ".. result.df_between .. " & ".. result.MSB .. " & ".. result.F .. "\\\\")
+    tex.print("Error & " .. result.SSE .. " & ".. result.df_within .. " & ".. result.MSE .. "\\\\")
+    tex.print("\\hline")
+    tex.print("Total & " .. result.SSE+result.SSB .. " & ".. result.df_within+result.df_between .. "\\\\")
+    tex.print("\\end{tabular}")
+    tex.print("\\\\")
+  }
+}
+
+\newcommand{\TwoWayANOVA}[1]{%
+  \directlua{
+    local result = two_way_anova(#1)
+    tex.print("\\begin{tabular}{p{4cm}p{2cm}p{1cm}p{2cm}p{1cm}}")
+    tex.print("\\hline \\hline")
+    tex.print("\\textbf{Source of Variation} & \\textbf{Sum of Squares} & \\textbf{df} & \\textbf{Mean Square} & \\textbf{F} \\\\ \\hline")
+    tex.print("Factor A & " .. result.SSA .. " & ".. result.df_A .. " & ".. result.MSA .. " & ".. result.F_A .. "\\\\")
+    tex.print("Factor B & " .. result.SSB .. " & ".. result.df_B .. " & ".. result.MSB .. " & ".. result.F_B .. "\\\\")
+    tex.print("Error & " .. result.SSE .. " & ".. result.df_within .. " & ".. result.MSE .."\\\\")
+    tex.print("\\hline")
+    tex.print("Total & " .. result.SST .. " & ".. result.df_total .. "\\\\")
+    tex.print("\\end{tabular}")
+  }
+}
+
+%=================== Loading CSV data and summarizing it=================
+% Function to load CSV file
+\begin{luacode*}
+-- Load CSV Function
+function load_csv(filename)
+    local file = io.open(filename, "r")
+    local data = {}
+    if file then
+        for line in file:lines() do
+            local row = {}
+            for num in string.gmatch(line, "([^,]+)") do
+                table.insert(row, tonumber(num) or 0)  -- Handle non-numeric values gracefully
+            end
+            table.insert(data, row)
+        end
+        file:close()
+    else
+        tex.print("Error: Could not open file " .. filename)
+    end
+    return data
+end
+
+-- Advanced Statistics for CSV Columns
+function advanced_statistics_csv(filename)
+    local data = load_csv(filename)
+    if #data == 0 then
+        tex.print("Error: No data found in the CSV file.")
+        return ""
+    end
+
+    local results = {}
+
+    -- Start LaTeX table with color enhancements
+    local table_output = "\\renewcommand\\arraystretch{1.5}\\setlength\\tabcolsep{3pt}\\small\\rowcolors{2}{gray!10}{white}\\begin{tabular}{ccccccc}\\hline\n"
+    table_output = table_output .. "\\rowcolor{gray!25}\\textbf{Column} & \\textbf{Mean} & \\textbf{Median} & \\textbf{Mode} & \\textbf{Variance} & \\textbf{Std Dev} & \\textbf{Range} \\\\"
+
+    -- Compute statistics for each column
+    for col = 1, #data[1] do
+        local column_data = {}
+        for row = 1, #data do
+            table.insert(column_data, data[row][col])
+        end
+
+        -- Calculate statistics
+        local mean_val = mean(column_data) or 0
+        local median_val = median(column_data) or 0
+        local mode_val = table.concat(mode(column_data) or {"N/A"}, ", ")
+        local variance_val = variance(column_data) or 0
+        local sd_val = standard_deviation(column_data) or 0
+        local range_val = range(column_data) or 0
+
+        -- Format row for LaTeX table
+        table_output = table_output .. string.format(
+            "%d & %.2f & %.2f & %s & %.2f & %.2f & %.2f \\\\\n",
+            col, mean_val, median_val, mode_val, variance_val, sd_val, range_val
+        )
+    end
+
+    -- End LaTeX table without an extra empty row
+    table_output = table_output .."\\end{tabular}"
+    return table_output
+end
+\end{luacode*}
+
+\newcommand{\CSVsummary}[1]{%
+    \directlua{
+        local table_output = advanced_statistics_csv("#1")
+        tex.print(table_output)
+    }
+}
+
+
+
+
+
