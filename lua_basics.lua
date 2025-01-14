@@ -1,109 +1,109 @@
--- function load_csv(filename)
---     local file = io.open(filename, "r")
---     local data = {}
---     if file then
---         for line in file:lines() do
---             local row = {}
---             for num in string.gmatch(line, "([^,]+)") do
---                 table.insert(row, tonumber(num) or 0)  -- Handle non-numeric values gracefully
---             end
---             table.insert(data, row)
---         end
---         file:close()
---     else
---         print("Error: Could not open file " .. filename)
---     end
---     return data
--- end
+-- 1. Basic Variables and Arithmetic Operations
+local a = 10
+local b = 5
 
--- local data = load_csv("C:/Users/Anupam/Downloads/file.csv")
+-- Basic arithmetic
+print("Basic Arithmetic:")
+print("Addition:", a + b)      -- 15
+print("Subtraction:", a - b)   -- 5
+print("Multiplication:", a * b) -- 50
+print("Division:", a / b)      -- 2
+print("Exponentiation:", a ^ 2) -- 100
+print("Modulo:", a % 3)        -- 1
 
--- for col = 1, #data[1] do
---     local column_data = {}
---     for row = 1, #data do
---         --print(data[row][col])
---     end
+-- 2. Mathematical Functions
+print("\nMathematical Functions:")
+print("Square root:", math.sqrt(16))    -- 4
+print("Absolute value:", math.abs(-7))  -- 7
+print("Floor:", math.floor(3.7))        -- 3
+print("Ceiling:", math.ceil(3.7))       -- 4
+print("Pi:", math.pi)                   -- 3.141592653589793
+print("Sin(π/2):", math.sin(math.pi/2)) -- 1
 
--- end
+-- 3. Working with Tables (Arrays/Matrices)
+local vector = {1, 2, 3, 4, 5}
+local matrix = {
+    {1, 2, 3},
+    {4, 5, 6},
+    {7, 8, 9}
+}
 
--- print(#data[1])
-
-
-data = {{0,-6,3,6,-3},{-4,-1,-6,1,5},{8,-2,5,0,5}}
-
-local a = #data
-local b = #data[1]
-
-local total_sum, total_count= 0, 0
-for _, row in ipairs(data) do
-    for _, value in ipairs(row) do
-        total_sum = total_sum + value
-        total_count = total_count + 1
-    end
-end
-local grand_mean = total_sum / total_count
-local C = total_sum^2/total_count
-
-local df_A = a-1
-local df_B = b-1
-local df_within = total_count -1
-local df_AB = df_within - df_A - df_B
-
---SST 
-local SS = 0
-for _,row in ipairs(data) do 
-    for _,value in ipairs(row) do
-        SS = SS + value^2
-    end
-end
-local SST = SS - C
-
--- Calculate row sums
-local row_sums = {}
-for i, row in ipairs(data) do
+-- Vector operations
+local function vectorSum(vec)
     local sum = 0
-    for _, value in ipairs(row) do
+    for _, value in ipairs(vec) do
         sum = sum + value
     end
-    table.insert(row_sums, sum)
+    return sum
 end
 
--- Calculate column sums
-local col_sums = {}
-local num_cols = #data[1]
-for j = 1, num_cols do
-    local sum = 0
-    for i = 1, #data do
-        sum = sum + data[i][j]
+-- Matrix operations
+local function matrixTrace(mat)
+    local trace = 0
+    for i = 1, #mat do
+        trace = trace + mat[i][i]
     end
-    table.insert(col_sums, sum)
+    return trace
 end
 
--- SSA
-local ssa = 0
-for _,i in ipairs(row_sums) do 
-    ssa = ssa + (i^2)/b
+print("\nVector and Matrix Operations:")
+print("Vector sum:", vectorSum(vector))
+print("Matrix trace:", matrixTrace(matrix))
+
+-- 4. Statistical Functions
+local dataset = {10, 20, 30, 40, 50}
+
+-- Calculate mean
+local function mean(data)
+    return vectorSum(data) / #data
 end
-local SSA = ssa - C
 
--- SSB
-local ssb = 0
-for _,i in ipairs(col_sums) do 
-    ssb = ssb + (i^2)/a
+-- Calculate variance
+local function variance(data)
+    local m = mean(data)
+    local sum_sq_diff = 0
+    for _, value in ipairs(data) do
+        sum_sq_diff = sum_sq_diff + (value - m)^2
+    end
+    return sum_sq_diff / #data
 end
-local SSB = ssb - C
-local SSE = SST - SSA -SSB
 
-local MSA = SSA / df_A
-local MSB = SSB / df_B
-local MSE = SSE / df_AB
+-- Calculate standard deviation
+local function stddev(data)
+    return math.sqrt(variance(data))
+end
 
-local F_A = MSA/MSE
-local F_B = MSB/MSE
+print("\nStatistical Calculations:")
+print("Mean:", mean(dataset))
+print("Variance:", variance(dataset))
+print("Standard Deviation:", stddev(dataset))
 
-print(C)
-print(SSA,SSB,SSE,SST)
-print(a,b)
-print(df_A,df_B,df_AB,df_within)
-print(MSA,MSB,MSE)
-print(F_A,F_B)
+-- 5. Advanced Mathematical Operations
+-- Function to calculate factorial
+local function factorial(n)
+    if n == 0 then return 1 end
+    return n * factorial(n - 1)
+end
+
+-- Function to calculate combinations (nCr)
+local function combination(n, r)
+    return factorial(n) / (factorial(r) * factorial(n - r))
+end
+
+print("\nAdvanced Math:")
+print("5! =", factorial(5))
+print("Combinations (5,2) =", combination(5, 2))
+
+-- 6. Numerical Methods
+-- Simple Newton-Raphson method for finding square root
+local function sqrt_newton(n, precision)
+    local x = n
+    local h = precision or 0.0001
+    while math.abs(x*x - n) > h do
+        x = (x + n/x) / 2
+    end
+    return x
+end
+
+print("\nNumerical Methods:")
+print("Square root of 16 (Newton method):", sqrt_newton(16))
