@@ -6,6 +6,17 @@ This repository contains the development work on LaTeX statistical packages **lu
 These packages were developed under the guidance of **Dr. Chetan Shirore** and **Dr. Ajit Kumar** to bridge the gap between LaTeX's typesetting capabilities and statistical analysis.
 
 ---
+### **Luastats Package**
+- Provides essential statistical functions:
+  - **Mean, Median, Mode**
+  - **Variance and Standard Deviation**
+  - **Quartiles and Interquartile Range (IQR)**
+  - **Skewness and Kurtosis**
+  - **Correlation and Regression Analysis**
+  - **Probability Mass Functions (PMFs), PDFs, and CDFs**
+- Supports **CSV data analysis**.
+- Includes **probability distribution functions** and **random number generation**.
+
 
 ## Features
 ### **Luatests Package**
@@ -19,16 +30,7 @@ These packages were developed under the guidance of **Dr. Chetan Shirore** and *
 - Outputs formatted LaTeX tables with statistical results.
 - Requires **LuaLaTeX** for compilation.
 
-### **Luastats Package**
-- Provides essential statistical functions:
-  - **Mean, Median, Mode**
-  - **Variance and Standard Deviation**
-  - **Quartiles and Interquartile Range (IQR)**
-  - **Skewness and Kurtosis**
-  - **Correlation and Regression Analysis**
-  - **Probability Mass Functions (PMFs), PDFs, and CDFs**
-- Supports **CSV data analysis**.
-- Includes **probability distribution functions** and **random number generation**.
+
 
 ---
 
