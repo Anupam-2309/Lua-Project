@@ -1,0 +1,297 @@
+
+\subsection{Welch's T-Test}
+
+\subsubsection{Description}
+
+Welch's T-Test is used to compare the means of two groups when the variances are not assumed to be equal.
+
+\subsubsection{Syntax}
+
+\begin{verbatim}
+\luaWelchsTTest[options]{array1}{array2}
+\end{verbatim}
+
+\subsubsection{Options}
+
+\begin{itemize}
+    \item \texttt{label}: Custom label for the table (default: "T-Test").
+    \item \texttt{headline}: Custom headline for the table.
+    \item \texttt{midline}: Custom midline for the table.
+\end{itemize}
+
+\subsubsection{Example}
+
+\begin{verbatim}
+    \begin{tabular}{c|c}
+    \luaWelchsTTest[label=Welch's T-Test, headline=\hline, midline=\hline]
+    {1, 2, 3, 4}{5, 6, 7, 8}
+    \end{tabular}
+\end{verbatim}
+\[
+\begin{tabular}{|c|c|}
+\hline
+\rowcolor{red!20}
+\luaWelchsTTest[label=Welch's T-Test, headline=\hline, midline=\hline]{1, 2, 3, 4}{5, 6, 7, 8}
+\hline
+\end{tabular}
+\]
+
+The output will be a LaTeX table with the T-statistic, means, variances, standard error, and degrees of freedom.
+
+\subsection{Independent T-Test (Equal Variance Assumption)}
+
+\subsubsection{Description}
+
+This test compares the means of two independent groups assuming equal variances.
+
+\subsubsection{Syntax}
+
+\begin{verbatim}
+\luaTTestIndependent[options]{array1}{array2}
+\end{verbatim}
+
+\subsubsection{Options}
+
+\begin{itemize}
+    \item \texttt{label}: Custom label for the table (default: "T-Test").
+    \item \texttt{headline}: Custom headline for the table.
+    \item \texttt{midline}: Custom midline for the table.
+\end{itemize}
+
+\subsubsection{Example}
+
+\begin{verbatim}
+\luaTTestIndependent[label=Independent T-Test, headline=\hline, midline=\hline]
+{1, 2, 3, 4}{5, 6, 7, 8}
+\end{verbatim}
+
+\[
+\begin{tabular}{c|c}
+ \luaTTestIndependent[label=Independent T-Test, headline=\hline, midline=\hline]{1, 2, 3, 4}{5, 6, 7, 8}
+\end{tabular}
+\]
+
+
+The output will be a LaTeX table with the T-statistic, means, variances, standard error, and degrees of freedom.
+
+\subsection{Paired T-Test}
+
+\subsubsection{Description}
+
+This test compares the means of two related groups (e.g., before and after measurements).
+
+\subsubsection{Syntax}
+
+\begin{verbatim}
+\luaTTestPaired[options]{array1}{array2}
+\end{verbatim}
+
+\subsubsection{Options}
+
+\begin{itemize}
+    \item \texttt{label}: Custom label for the table (default: "T-Test").
+    \item \texttt{headline}: Custom headline for the table.
+    \item \texttt{midline}: Custom midline for the table.
+\end{itemize}
+
+\subsubsection{Example}
+
+\begin{verbatim}
+\begin{tabular}{c|c}
+     \luaTTestPaired[label=Paired T-Test, headline=\hline, midline=\hline]
+     {1, 2, 3, 4}{5, 6, 7, 8}
+\end{tabular}
+\end{verbatim}
+\[
+\begin{tabular}{c|c}
+     \luaTTestPaired[label=Paired T-Test, headline=\hline, midline=\hline]{1, 2, 3, 4}{5, 6, 7, 8}
+\end{tabular}
+\]
+The output will be a LaTeX table with the T-statistic, mean difference, variance difference, standard error, and degrees of freedom.
+
+\subsection{One-Sample T-Test}
+
+\subsubsection{Description}
+
+This test compares the mean of a single group to a known population mean.
+
+\subsubsection{Syntax}
+
+\begin{verbatim}
+\luaOneSampleTTest[options]{array}{population_mean}
+\end{verbatim}
+
+\subsubsection{Options}
+
+\begin{itemize}
+    \item \texttt{label}: Custom label for the table (default: "T-Test").
+    \item \texttt{headline}: Custom headline for the table.
+    \item \texttt{midline}: Custom midline for the table.
+\end{itemize}
+
+\subsubsection{Example}
+
+\begin{verbatim}
+\begin{tabular}{c|c}
+ \luaOneSampleTTest[label=One-Sample T-Test, headline=\hline, midline=\hline]
+ {1, 2, 3, 4}{2.5}
+\end{tabular}
+\end{verbatim}
+
+\[
+\begin{tabular}{c|c}
+ \luaOneSampleTTest[label=One-Sample T-Test, headline=\hline, midline=\hline]{1, 2, 3, 4}{2.5}
+\end{tabular}
+\]
+
+The output will be a LaTeX table with the T-statistic, mean, variance, standard error, and degrees of freedom.
+
+\subsection{One-Way ANOVA}
+
+\subsubsection{Description}
+
+This test analyzes the effect of two independent categorical variables on a continuous outcome.
+
+\subsubsection{Syntax}
+
+\begin{verbatim}
+\luaOneWayAnova[options]{data}
+\end{verbatim}
+
+\subsubsection{Options}
+
+\begin{itemize}
+    \item \texttt{headline}: Custom headline for the table.
+    \item \texttt{midline}: Custom midline for the table.
+\end{itemize}
+
+\subsubsection{Example}
+
+\begin{verbatim}
+\begin{tabular}{c|c|c|c|c}
+\luaOneWayAnova[headline=\hline, midline=\hline]{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}
+\end{tabular}
+\end{verbatim}
+\[
+\begin{tabular}{c|c|c|c|c}
+\luaOneWayAnova[headline=\hline, midline=\hline]{{1, 2, 3,1},{4, 5, 6,5},{7, 8, 9,10}}
+\end{tabular}
+\]
+
+The output will be a LaTeX table with the sum of squares, degrees of freedom, mean squares, and F-values for both factors and the error term.
+
+\subsection{Two-Way ANOVA}
+
+\subsubsection{Description}
+
+This test analyzes the effect of two independent categorical variables on a continuous outcome.
+
+\subsubsection{Syntax}
+
+\begin{verbatim}
+\luaTwoWayAnova[options]{data}
+\end{verbatim}
+
+\subsubsection{Options}
+
+\begin{itemize}
+    \item \texttt{headline}: Custom headline for the table.
+    \item \texttt{midline}: Custom midline for the table.
+\end{itemize}
+
+\subsubsection{Example}
+
+\begin{verbatim}
+\begin{tabular}{c|c|c|c|c}
+\luaTwoWayAnova[headline=\hline, midline=\hline]{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}
+\end{tabular}
+\end{verbatim}
+\[
+\begin{tabular}{c|c|c|c|c}
+\luaTwoWayAnova[headline=\hline, midline=\hline]{{1, 2, 3,1}, {4, 5, 6,5}, {7, 8, 9,10}}
+\end{tabular}
+\]
+
+The output will be a LaTeX table with the sum of squares, degrees of freedom, mean squares, and F-values for both factors and the error term.
+
+\section*{Conclusion}
+
+The \texttt{luatests} package provides a powerful way to perform statistical tests directly within LaTeX documents. By leveraging Lua's computational capabilities, it allows for dynamic calculations and formatted output, making it ideal for academic and scientific documents.
+
+\section*{More Examples}
+
+\subsection*{Example 1: Welch's T-Test with Headline}
+\[
+\begin{tabular}{c|c}
+    \hline
+    \luaWelchsTTest[headline = \hline]{1,3,4,5,8,9}{6,7,8,9,10,11}
+    \hline
+\end{tabular}
+\]
+
+
+\subsection*{Example 2: Welch's T-Test with Row Color}
+\[
+\begin{tabular}{|c|c|}
+    \hline
+    \rowcolor{red!20}
+    \luaWelchsTTest[headline = \hline]{1,3,4,5,8,9}{6,7,8,9,10,11}
+    \hline
+\end{tabular}
+\]
+
+
+\subsection*{Example 3: Independent T-Test with Headline}
+\[
+\begin{tabular}{c|c}
+    \hline
+    \luaTTestIndependent[headline = \hline]{1,3,4,5,8,9}{6,7,8,9,10,11}
+    \hline
+\end{tabular}
+\]
+
+\subsection*{Example 4: Independent T-Test with Midline}
+\[
+\begin{tabular}{c|c}
+    \luaTTestIndependent[midline = \hline]{1,3,4,5,8,9}{6,7,8,9,10,11}
+\end{tabular}
+\]
+
+
+\subsection*{Example 5: Paired T-Test with Both Headline and Midline}
+\[
+\begin{tabular}{c|c}
+    \hline
+    \luaTTestPaired[midline = \hline, headline = \hline]{1,3,4,5,8,9}{6,7,8,9,10,11}
+    \hline
+\end{tabular}
+\]
+
+
+\subsection*{Example 6: One-Sample T-Test with Dataset}
+\[
+\begin{tabular}{|c|c|}
+    \hline
+    \luaOneSampleTTest[headline = \hline]{20.70,27.46,22.15,19.85,21.29,24.75,20.75,22.91,25.34,20.33,21.54,21.08,22.14,19.56,21.10,18.04,24.12,19.95,19.72,18.28,16.26,17.46,20.53,22.12,25.06,22.44,19.08,19.88,21.39,22.33,25.79}{20}
+    \hline
+\end{tabular}
+\]
+
+\subsection*{Example 7: Two-Way ANOVA with Row Color}
+\[
+\begin{tabular}{|ccccc|}
+    \hline
+    \rowcolor{orange!10}
+    \luaTwoWayAnova{{8,5,5,7},{7,6,4,4},{3,6,5,4}}
+    \hline
+\end{tabular}
+\]
+
+\subsection*{Example 8: One-Way ANOVA with Headline and Midline}
+\[
+\begin{tabular}{c|c|c|c|c}
+    \hline
+    \luaOneWayAnova[headline = \hline, midline = \hline]{{8,5,5,7},{7,6,4,4},{3,6,5,4}}
+    \hline
+\end{tabular}
+\]

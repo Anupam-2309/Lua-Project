@@ -1,0 +1,70 @@
+\section{Plotting Probability Distributions}
+This package provides plotting functionality for different distributions using \texttt{TikZ} and \texttt{pgfplots}.
+
+\subsection{Normal Distribution}
+\subsubsection{Probability Density Function (PDF)}
+\begin{verbatim}
+	\luanormpdf{mean}{stddev}{range}{step}
+\end{verbatim}
+Example:
+\begin{center}
+	\luanormpdf{0}{1}{-3,3}{0.1}
+\end{center}
+
+\subsubsection{Cumulative Distribution Function (CDF)}
+\begin{verbatim}
+	\luanormcdf{mean}{stddev}{range}{step}
+\end{verbatim}
+Example:
+\begin{center}
+	\luanormcdf{0}{1}{-3,3}{0.1}
+\end{center}
+
+\subsection{Uniform Distribution}
+\subsubsection{Probability Density Function (PDF)}
+\begin{verbatim}
+	\luaunipdf{a}{b}{range}
+\end{verbatim}
+Example:
+\begin{center}
+	\luaunipdf{0}{1}{-1,2}
+\end{center}
+
+\subsubsection{Cumulative Distribution Function (CDF)}
+\begin{verbatim}
+	\luaunicdf{a}{b}{range}
+\end{verbatim}
+Example:
+\begin{center}
+	\luaunicdf{0}{1}{-1,2}
+\end{center}
+
+\subsection{Exponential Distribution}
+\subsubsection{Probability Density Function (PDF)}
+\begin{verbatim}
+	\luaexppdf{lambda}{range}{step}
+\end{verbatim}
+Example:
+\begin{center}
+	\luaexppdf{1}{0,5}{0.1}
+\end{center}
+
+\subsubsection{Cumulative Distribution Function (CDF)}
+\begin{verbatim}
+	\luaexpcdf{lambda}{range}{step}
+\end{verbatim}
+Example:
+\begin{center}
+	\luaexpcdf{1}{0,5}{0.1}
+\end{center}
+
+\section{Histogram and KDE (Kernel Density Estimation)}
+\subsection{Histogram and Smoothed KDE}
+\begin{verbatim}
+	\luadistplot{data}{bins}{range}{step}
+\end{verbatim}
+
+Example:
+\begin{center}
+	\luadistplot{\luarandomnormal{0}{1}{5000}}{25}{-5,5}{0.5}
+\end{center}

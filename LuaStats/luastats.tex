@@ -1,0 +1,60 @@
+\documentclass{article}
+\usepackage{booktabs} % For prettier tables
+\usepackage{luastats}
+\usepackage{tabularx} % For adjustable column widths
+\usepackage{amsmath, amssymb} % For mathematical symbols
+\usepackage{geometry,url} % For better page margins
+\geometry{a4paper, margin=1in} % Adjust margins
+\usepackage{multirow}
+
+\title{The \texttt{luastats} Package in LaTeX}
+\author{Chetan Shirore , Ajit Kumar\\ and\\ Anupam Maurya}
+\date{March 28, 2024}
+
+\begin{document}
+	
+	\maketitle
+	
+	\section{Introduction}
+	
+	The luastats package is a LuaLaTeX-based statistical computation library designed to provide essential statistical functions using Lua scripting within LaTeX. It aims to bridge the gap between LaTeX's typesetting capabilities and Lua's computational power, enabling users to perform statistical calculations directly within their LaTeX documents without relying on external tools or complex macros.
+	
+	\section{Motivation Behind \underline{luastats}}
+	
+	Statistical analysis is a fundamental aspect of many academic and research fields, including mathematics, physics, economics, and social sciences. While LaTeX excels at formatting mathematical expressions and reports, its built-in calculation capabilities are limited. Traditionally, users have relied on tools like R, Python, or MATLAB for data analysis before manually integrating results into their LaTeX documents. The luastats package eliminates this extra step by allowing users to compute statistical measures dynamically within their \LaTeX \;workflow using Lua.
+	
+	\subsection{Key Features}
+	\begin{enumerate}
+		\item Seamless Lua Integration: Leverages LuaLaTeX's embedded Lua scripting environment to perform calculations efficiently.
+		\item Essential Statistical Functions: Provides core statistical operations,including:
+		\begin{itemize}
+			\item Mean (average) computation
+			\item Median calculation
+			\item Rounding functions
+		\end{itemize}
+		\item Dynamic Computation in LaTeX: Users can pass data directly in LaTeX and receive computed results in real time, enhancing automation in document generation.
+		\item User-Friendly Syntax: The package is designed to be intuitive, requiring minimal coding knowledge to use its functions.
+		\item Efficient Execution: Lua's lightweight nature ensures fast computations, making it a practical alternative to heavier computational tools.
+	\end{enumerate}
+	
+	\section{Who Should Use?}
+	\begin{itemize}
+		\item Researchers \& Academics: Ideal for those who work with data-driven reports and need real-time statistical processing in LaTeX.
+		\item Students \& Educators: Helps in teaching statistics, probability, and mathematical analysis without switching between different software.
+		\item Technical Writers: Useful for professionals preparing reports, articles, or books that require embedded calculations.
+	\end{itemize}
+	
+	\section{Installation and License}
+	
+	To install the \texttt{luastats} package, place the \texttt{luastats.sty} file in your LaTeX directory. Include the package in your document with:
+	
+	\begin{verbatim}
+		\usepackage{luastats}
+	\end{verbatim}
+
+	\input{basic}
+	\input{statsFunc}
+	\input{randomNumber}
+	\input{plot}
+	
+\end{document}

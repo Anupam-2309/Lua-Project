@@ -1,0 +1,35 @@
+\begin{table}[h]
+	\centering
+	\renewcommand{\arraystretch}{2} % Adjust row spacing
+	\setlength{\tabcolsep}{10pt} % Adjust column spacing
+	\begin{tabular}{|c|c|c|}
+		\hline
+		\textbf{Distribution} & \textbf{Parameters} & \textbf{Generated Values} \\
+		\hline
+		\multirow{2}{*}{Normal} & $\mu = 0, \sigma = 1, n=5$ & \luarandomnormal{0}{1}{5} \\
+		& \verb|\luarandomnormal{0}{1}{5}| & \\
+		\hline
+		\multirow{2}{*}{Uniform} & $a = 0, b = 1, n=5$ & \luarandomuniform{0}{1}{5} \\
+		& \verb|\luarandomuniform{0}{1}{5}| & \\
+		\hline
+		\multirow{2}{*}{Exponential} & $\lambda = 1, n=5$ & \luarandomexponential{1}{5} \\
+		& \verb|\luarandomexponential{1}{5}| & \\
+		\hline
+		\multirow{2}{*}{Binomial} & $n = 10, p = 0.5, samples=5$ & \luarandombinomial{10}{0.5}{5} \\
+		& \verb|\luarandombinomial{10}{0.5}{5}| & \\
+		\hline
+		\multirow{2}{*}{Poisson} & $\lambda = 3, samples=5$ & \luarandompoisson{3}{5} \\
+		& \verb|\luarandompoisson{3}{5}| & \\
+		\hline
+		\multirow{2}{*}{Chi-Square} & $df = 5, samples=5$ & \luarandomchisquare{5}{5} \\
+		& \verb|\luarandomchisquare{5}{5}| & \\
+		\hline
+		\multirow{2}{*}{t-Distribution} & $df = 10, samples=5$ & \luarandomt{10}{5} \\
+		& \verb|\luarandomt{10}{5}| & \\
+		\hline
+		\multirow{2}{*}{F-Distribution} & $df_1 = 5, df_2 = 10, samples=5$ & \luarandomf{5}{10}{5} \\
+		& \verb|\luarandomf{5}{10}{5}| & \\
+		\hline
+	\end{tabular}
+	\caption{Random Number Generation from Various Distributions}
+\end{table}

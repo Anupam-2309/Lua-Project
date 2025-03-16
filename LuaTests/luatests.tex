@@ -1,0 +1,46 @@
+\documentclass{article}
+\usepackage{luatests}
+\usepackage{booktabs} % For beautifying tables
+\usepackage{amsmath, amssymb} % For mathematical symbols
+\usepackage{url}
+
+\title{The \texttt{luatests} Package in LaTeX}
+\author{Chetan Shirore and Ajit Kumar\\Anupam Maurya}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\section{Introduction}
+
+The \texttt{luatests} package is developed to perform various statistical tests directly within LaTeX documents. It leverages Lua's computational capabilities to calculate statistical metrics and format the results in LaTeX tables. The package provides functions for Welch's T-Test, Independent T-Test, Paired T-Test, One-Sample T-Test, and Two-Way ANOVA. These commands can be used in an environment similar to a \texttt{tabular} or \texttt{array} environment and can be formatted using optional arguments.
+
+The package is written in Lua and requires the LuaLaTeX engine for compilation. It uses the \texttt{luacode} package to embed Lua code within LaTeX documents. The package is released under the LaTeX Project Public License v1.3c or later.
+
+\section{Installation and License}
+
+To install the \texttt{luatests} package, place the \texttt{luatests.sty} file in your LaTeX directory. Include the package in your document with:
+
+\begin{verbatim}
+\usepackage{luatests}
+\end{verbatim}
+
+The package is released under the LaTeX Project Public License v1.3c or later. The complete license text is available at \url{http://www.latex-project.org/lppl.txt}.
+
+\section{Commands in the \texttt{luatests} Package}
+
+The \texttt{luatests} package provides the following commands:
+
+\begin{itemize}
+    \item \texttt{\textbackslash luaWelchsTTest}: Welch's T-Test
+    \item \texttt{\textbackslash luaTTestIndependent}: Independent T-Test (Equal Variance Assumption)
+    \item \texttt{\textbackslash luaTTestPaired}: Paired T-Test
+    \item \texttt{\textbackslash luaOneSampleTTest}: One-Sample T-Test
+    \item \texttt{\textbackslash luaOneWayAnova}: One-Way ANOVA
+    \item \texttt{\textbackslash luaTwoWayAnova}: Two-Way ANOVA
+\end{itemize}
+
+Each command has optional arguments for formatting the output table, such as \texttt{label}, \texttt{headline}, and \texttt{midline}.
+\input{examples.tex}
+
+\end{document}
