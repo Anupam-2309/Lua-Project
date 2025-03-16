@@ -6,7 +6,8 @@ This repository contains the development work on LaTeX statistical packages **lu
 These packages were developed under the guidance of **Dr. Chetan Shirore** and **Dr. Ajit Kumar** to bridge the gap between LaTeX's typesetting capabilities and statistical analysis.
 
 ---
-### **Luastats Package**
+### [**Luastats Package**](https://github.com/Anupam-2309/Lua-Project/blob/main/LuaStats/LuaStats.pdf)
+
 - Provides essential statistical functions:
   - **Mean, Median, Mode**
   - **Variance and Standard Deviation**
@@ -19,7 +20,7 @@ These packages were developed under the guidance of **Dr. Chetan Shirore** and *
 
 
 ## Features
-### **Luatests Package**
+### [**Luatests Package**](https://github.com/Anupam-2309/Lua-Project/blob/main/LuaTests/LuaTests.pdf)
 - Provides functions for performing statistical tests:
   - **Welch’s T-Test**
   - **Independent T-Test**
