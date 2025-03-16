@@ -1,0 +1,556 @@
+\ProvidesPackage{luatests}[1.0]
+\RequirePackage{xkeyval}
+\RequirePackage{luacode}
+\RequirePackage{array}
+\usepackage[table]{xcolor}
+
+% ================= LUA CODE FOR T-TESTS =================
+\begin{luacode*}
+	-- Function to calculate mean
+	function mean(array)
+	local sum = 0
+	for _, value in ipairs(array) do
+	sum = sum + value
+	end
+	return sum / #array
+	end
+	
+	-- Function to calculate variance
+	function variance(array)
+	local mean_value = mean(array)
+	local sum_sq_diff = 0
+	for _, value in ipairs(array) do
+	sum_sq_diff = sum_sq_diff + (value - mean_value)^2
+	end
+	return sum_sq_diff / (#array - 1)
+	end
+	
+	-- Function to round numbers
+	function round(value, decimals)
+	local factor = 10 ^ (decimals or 0)
+	return math.floor(value * factor + 0.5) / factor
+	end
+	
+	-- Welch's T-test
+	function welchs_t_test(array1, array2, label, headline, midline)
+	if not array1 or not array2 or #array1 == 0 or #array2 == 0 then
+	return nil, "Error: Empty dataset"
+	end
+	
+	local mean1, mean2 = mean(array1), mean(array2)
+	local variance1, variance2 = variance(array1), variance(array2)
+	local n1, n2 = #array1, #array2
+	
+	if n1 < 2 or n2 < 2 then 
+	return nil, "Error: Insufficient data" 
+	end
+	
+	local se1, se2 = variance1 / n1, variance2 / n2
+	local welch_se = math.sqrt(se1 + se2)
+	
+	if welch_se == 0 then 
+	return nil, "Error: Zero variance" 
+	end
+	
+	local t_statistic = (mean1 - mean2) / welch_se
+	local df_numerator = (se1 + se2)^2
+	local df_denominator = (se1^2) / (n1 - 1) + (se2^2) / (n2 - 1)
+	local degrees_of_freedom = df_numerator / df_denominator
+	
+	results ,error_msg = {
+		round(t_statistic, 5),
+		round(mean1, 5),
+		round(mean2, 5),
+		round(variance1, 5),
+		round(variance2, 5),
+		round(welch_se, 5),
+		round(degrees_of_freedom, 5)
+	}, nil 
+	
+	if error_msg then
+	return "\\textbf{" .. error_msg .. "}"
+	end
+	
+	headline = headline or ''
+	midline = midline or ''
+	
+	local str = ""
+	str = str.. "\\textbf{" .. label .. "} & Value \\\\"
+	
+	if headline ~= "" then
+	str = str .. headline .. " \\hline "
+	end
+	
+	
+	local labels = {
+		"T-statistic", "Mean of Group 1", "Mean of Group 2", 
+		"Variance of Group 1", "Variance of Group 2", 
+		"Standard Error", "Degrees of Freedom"
+	}
+	
+	for i, lbl in ipairs(labels) do
+	str = str .. lbl .. " & $" .. results[i] .. "$ \\\\ "
+	if midline ~= "" and i < #labels then
+	str = str .. midline .. ""
+	end
+	end
+	
+	return str
+	end
+	
+	-- Independent T-Test (Equal Variance Assumption)
+	function independent_t_test(array1, array2, label, headline, midline)
+	local mean1, mean2 = mean(array1), mean(array2)
+	local var1, var2 = variance(array1), variance(array2)
+	local n1, n2 = #array1, #array2
+	
+	if n1 < 2 or n2 < 2 then return nil, "Error: Insufficient data" end
+	
+	local pooled_var = ((n1 - 1) * var1 + (n2 - 1) * var2) / (n1 + n2 - 2)
+	local se = math.sqrt(pooled_var * (1 / n1 + 1 / n2))
+	local t_statistic = (mean1 - mean2) / se
+	local df = n1 + n2 - 2
+	
+	
+	
+	results ,error_msg = {
+		round(t_statistic, 5),
+		round(mean1, 5), round(mean2, 5),
+		round(var1, 5), round(var2, 5),
+		round(se, 5), round(df, 5)
+	}, nil
+	
+	if error_msg then
+	return "\\textbf{" .. error_msg .. "}"
+	end
+	
+	headline = headline or ''
+	midline = midline or ''
+	
+	local str = ""
+	str = str.. "\\textbf{" .. label .. "} & Value \\\\"
+	
+	if headline ~= "" then
+	str = str .. headline .. " \\hline "
+	end
+	
+	
+	local labels = {
+		"T-statistic", "Mean of Group 1", "Mean of Group 2", 
+		"Variance of Group 1", "Variance of Group 2", 
+		"Standard Error", "Degrees of Freedom"
+	}
+	
+	for i, lbl in ipairs(labels) do
+	str = str .. lbl .. " & $" .. results[i] .. "$ \\\\ "
+	if midline ~= "" and i < #labels then
+	str = str .. midline .. ""
+	end
+	end
+	
+	return str
+	end
+	
+	
+	-- Paired T-Test
+	function paired_t_test(array1, array2, label, headline, midline)
+	if #array1 ~= #array2 then
+	return nil, "Error: Unequal sample sizes"
+	end
+	
+	local differences = {}
+	for i = 1, #array1 do
+	table.insert(differences, array1[i] - array2[i])
+	end
+	
+	local mean_diff = mean(differences)
+	local var_diff = variance(differences)
+	local n = #differences
+	
+	if n < 2 then return nil, "Error: Insufficient data" end
+	
+	local se = math.sqrt(var_diff / n)
+	local t_statistic = mean_diff / se
+	local df = n - 1
+	
+	results ,error_msg = {
+		round(t_statistic, 5),
+		round(mean_diff, 5),
+		round(var_diff, 5),
+		round(se, 5),
+		round(df, 5)
+	}, nil
+	
+	if error_msg then
+	return "\\textbf{" .. error_msg .. "}"
+	end
+	
+	headline = headline or ''
+	midline = midline or ''
+	
+	local str = ""
+	str = str.. "\\textbf{" .. label .. "} & Value \\\\"
+	
+	if headline ~= "" then
+	str = str .. headline .. " \\hline "
+	end
+	
+	
+	local labels = {
+		"T-statistic", "Mean Diff", "Variance Diff", "Standard Error", "Degrees of Freedom"
+	}
+	
+	for i, lbl in ipairs(labels) do
+	str = str .. lbl .. " & $" .. results[i] .. "$ \\\\ "
+	if midline ~= "" and i < #labels then
+	str = str .. midline .. ""
+	end
+	end
+	
+	return str
+	end
+	
+	-- ======================One-sample T-test================
+	function one_sample_t_test(array, population_mean, label, headline, midline)
+	local mean1 = mean(array)
+	local variance1 = variance(array)
+	local n = #array
+	local se = math.sqrt(variance1 / n)
+	local t_statistic = (mean1 - population_mean) / se
+	
+	results ,error_msg =  {
+		round(t_statistic,5), 
+		round(mean1,5), 
+		round(variance1,5), 
+		round(se,5),
+		n-1
+	},nil
+	
+	if error_msg then
+	return "\\textbf{" .. error_msg .. "}"
+	end
+	
+	headline = headline or ''
+	midline = midline or ''
+	
+	local str = ""
+	str = str.. "\\textbf{" .. label .. "} & Value \\\\"
+	
+	if headline ~= "" then
+	str = str .. headline .. " \\hline "
+	end
+	
+	local labels = {
+		"T-statistic", "Mean", "Variance ", "Standard Error", "Degree of Freedom"
+	}
+	
+	for i, lbl in ipairs(labels) do
+	str = str .. lbl .. " & $" .. results[i] .. "$ \\\\ "
+	if midline ~= "" and i < #labels then
+	str = str .. midline .. ""
+	end
+	end
+	
+	return str
+	end
+\end{luacode*}
+%======================================Two way Anova =============================
+\begin{luacode*}
+	function two_way_anova(data, headline, midline)
+	-- Calculate grand mean
+	local a = #data           -- number of rows
+	local b = #data[1]        -- number of columns
+	
+	-- Validate input
+	if not data or #data == 0 or #data[1] == 0 then
+	return nil, "Error: Empty dataset"
+	end
+	
+	-- Calculate total sum and count
+	local total_sum, total_count = 0, 0
+	for _, row in ipairs(data) do
+	for _, value in ipairs(row) do
+	total_sum = total_sum + value
+	total_count = total_count + 1
+	end
+	end
+	local grand_mean = total_sum / total_count
+	local C = total_sum^2/total_count
+	
+	-- Calculate SST
+	local SS = 0
+	for _, row in ipairs(data) do 
+	for _, value in ipairs(row) do
+	SS = SS + value^2
+	end
+	end
+	local SST = SS - C
+	
+	-- Calculate row sums
+	local row_sums = {}
+	for i, row in ipairs(data) do
+	local sum = 0
+	for _, value in ipairs(row) do
+	sum = sum + value
+	end
+	row_sums[i] = sum
+	end
+	
+	-- Calculate column sums
+	local col_sums = {}
+	for j = 1, b do
+	local sum = 0
+	for i = 1, a do
+	sum = sum + data[i][j]
+	end
+	col_sums[j] = sum
+	end
+	
+	-- Calculate SSA (Factor A)
+	local ssa = 0
+	for _, sum in ipairs(row_sums) do 
+	ssa = ssa + (sum^2)/b
+	end
+	local SSA = ssa - C
+	
+	-- Calculate SSB (Factor B)
+	local ssb = 0
+	for _, sum in ipairs(col_sums) do 
+	ssb = ssb + (sum^2)/a
+	end
+	local SSB = ssb - C
+	
+	-- Calculate SSE
+	local SSE = SST - SSA - SSB
+	
+	-- Degrees of freedom
+	local df_A = a - 1
+	local df_B = b - 1
+	local df_total = total_count - 1
+	local df_within = df_total - df_A - df_B 
+	
+	-- Mean squares
+	local MSA = SSA / df_A
+	local MSB = SSB / df_B
+	local MSE = SSE / df_within
+	
+	-- F-statistics
+	local F_A = MSA / MSE
+	local F_B = MSB / MSE
+	
+	-- Round results
+	local results = {
+		round(SSA, 5),
+		round(SSB, 5),
+		round(SST, 5),
+		round(SSE, 5),
+		df_A,
+		df_B,
+		df_within,
+		df_total,
+		round(MSA, 5), 
+		round(MSB, 5),
+		round(MSE, 5),
+		round(F_A, 5), 
+		round(F_B, 5)
+	}
+	
+	-- Format table output
+	headline = headline or ''
+	midline = midline or ''
+	
+	local str = ""
+	str = str .. "\\textbf{Source of Variation} & \\textbf{Sum of Squares} & \\textbf{df} & \\textbf{Mean Square} & \\textbf{$F_{value}$} \\\\ "
+	
+	if headline ~= "" then
+	str = str .. headline .. " \\hline "
+	end
+	
+	if midline ~= "" then
+	str = str .. "Factor A & $" .. results[1] .. "$ & $" .. results[5] .. "$ & $" .. results[9] .. "$ & $" .. results[12] .. "$ \\\\ " .. midline
+	str = str .. "Factor B & $" .. results[2] .. "$ & $" .. results[6] .. "$ & $" .. results[10] .. "$ & $" .. results[13] .. "$ \\\\ " .. midline
+	str = str .. "Error & $" .. results[4] .. "$ & $" .. results[7] .. "$ & $" .. results[11] .. "$ & \\\\ " .. midline
+	str = str .. "Total & $" .. results[3] .. "$ & $" .. results[8] .. "$ & & \\\\ "
+	else
+	str = str .. "Factor A & $" .. results[1] .. "$ & $" .. results[5] .. "$ & $" .. results[9] .. "$ & $" .. results[12] .. "$ \\\\ "
+	str = str .. "Factor B & $" .. results[2] .. "$ & $" .. results[6] .. "$ & $" .. results[10] .. "$ & $" .. results[13] .. "$ \\\\"
+	str = str .. "Error & $" .. results[4] .. "$ & $" .. results[7] .. "$ & $" .. results[11] .. "$ &  \\\\"
+	str = str .. "\\hline \n"
+	str = str .. "Total & $" .. results[3] .. "$ & $" .. results[8] .. "$ & & \\\\"
+	end
+	
+	return str
+	end
+\end{luacode*}
+%===============================One way Anova ======================================
+\begin{luacode*}
+	function one_way_anova(data, headline, midline)
+	-- Calculate grand mean
+	local k = #data           -- number of groups
+	local n = {}              -- number of observations in each group
+	local total_sum = 0
+	local total_count = 0
+	
+	-- Validate input
+	if not data or #data == 0 then
+	return nil, "Error: Empty dataset"
+	end
+	
+	-- Calculate total sum and count
+	for i, group in ipairs(data) do
+	n[i] = #group
+	for _, value in ipairs(group) do
+	total_sum = total_sum + value
+	total_count = total_count + 1
+	end
+	end
+	local grand_mean = total_sum / total_count
+	local C = total_sum^2 / total_count
+	
+	-- Calculate SST
+	local SS = 0
+	for _, group in ipairs(data) do
+	for _, value in ipairs(group) do
+	SS = SS + value^2
+	end
+	end
+	local SST = SS - C
+	
+	-- Calculate SSB (Between groups)
+	local SSB = 0
+	for i, group in ipairs(data) do
+	local group_sum = 0
+	for _, value in ipairs(group) do
+	group_sum = group_sum + value
+	end
+	SSB = SSB + (group_sum^2) / n[i]
+	end
+	SSB = SSB - C
+	
+	-- Calculate SSW (Within groups)
+	local SSW = SST - SSB
+	
+	-- Degrees of freedom
+	local df_between = k - 1
+	local df_within = total_count - k
+	local df_total = total_count - 1
+	
+	-- Mean squares
+	local MSB = SSB / df_between
+	local MSW = SSW / df_within
+	
+	-- F-statistic
+	local F = MSB / MSW
+	
+	-- Round results
+	local results = {
+		round(SSB, 5),
+		round(SSW, 5),
+		round(SST, 5),
+		df_between,
+		df_within,
+		df_total,
+		round(MSB, 5),
+		round(MSW, 5),
+		round(F, 5)
+	}
+	
+	-- Format table output
+	headline = headline or ''
+	midline = midline or ''
+	
+	local str = ""
+	str = str .. "\\textbf{Source of Variation} & \\textbf{Sum of Squares} & \\textbf{df} & \\textbf{Mean Square} & \\textbf{$F_{value}$} \\\\ "
+	
+	if headline ~= "" then
+	str = str .. headline .. " \\hline "
+	end
+	
+	if midline ~= "" then
+	str = str .. "Between Groups & $" .. results[1] .. "$ & $" .. results[4] .. "$ & $" .. results[7] .. "$ & $" .. results[9] .. "$ \\\\ " .. midline
+	str = str .. "Within Groups & $" .. results[2] .. "$ & $" .. results[5] .. "$ & $" .. results[8] .. "$ & \\\\ " .. midline
+	str = str .. "Total & $" .. results[3] .. "$ & $" .. results[6] .. "$ & & \\\\ "
+	else
+	str = str .. "Between Groups & $" .. results[1] .. "$ & $" .. results[4] .. "$ & $" .. results[7] .. "$ & $" .. results[9] .. "$ \\\\ "
+	str = str .. "Within Groups & $" .. results[2] .. "$ & $" .. results[5] .. "$ & $" .. results[8] .. "$ &  \\\\"
+	str = str .. "\\hline \n"
+	str = str .. "Total & $" .. results[3] .. "$ & $" .. results[6] .. "$ & & \\\\"
+	end
+	
+	return str
+	end
+\end{luacode*}
+
+% ================= KEY DEFINITIONS =================
+\define@key{luatests}{label}{\edef\luatests@label{\luastringN{#1}}}
+\define@key{luatests}{headline}{\edef\luatests@headline{\luastringN{#1}}}
+\define@key{luatests}{midline}{\edef\luatests@midline{\luastringN{#1}}}
+
+% ================= KEY DEFAULTS =================
+\setkeys{luatests}{label = T-Test}
+\setkeys{luatests}{headline = }%
+\setkeys{luatests}{midline = }%
+
+% ================= COMMAND DEFINITIONS =================
+\newcommand{\luaWelchsTTest}[3][]{%
+	\setkeys{luatests}{#1}%
+	\directlua{%
+	tex.sprint(welchs_t_test({#2}, {#3}, \luatests@label, \luatests@headline, \luatests@midline))
+}%
+}
+
+\newcommand{\luaTTestIndependent}[3][]{%
+\setkeys{luatests}{#1}%
+\directlua{%
+tex.sprint(independent_t_test({#2}, {#3}, \luatests@label, \luatests@headline, \luatests@midline))
+}%
+}
+
+\newcommand{\luaTTestPaired}[3][]{%
+\setkeys{luatests}{#1}%
+\directlua{%
+tex.sprint(paired_t_test({#2}, {#3}, \luatests@label, \luatests@headline, \luatests@midline ))
+}%
+}
+
+\newcommand{\luaOneSampleTTest}[3][]{%
+\setkeys{luatests}{#1}%
+\directlua{%
+tex.sprint(one_sample_t_test({#2}, #3 , \luatests@label, \luatests@headline, \luatests@midline ))
+}%
+}
+%=========================ANOVA===========================
+
+
+% ================= KEY DEFINITIONS =================
+\define@key{luaanova}{headline}{\edef\luaanova@headline{\luastringN{#1}}}
+\define@key{luaanova}{midline}{\edef\luaanova@midline{\luastringN{#1}}}
+
+% ================= KEY DEFAULTS =================
+\setkeys{luaanova}{headline = }%
+\setkeys{luaanova}{midline = }%
+
+
+\newcommand{\luaTwoWayAnova}[2][]{%
+\setkeys{luaanova}{#1}%
+\directlua{%
+tex.sprint(two_way_anova({#2} , \luaanova@headline, \luaanova@midline))
+}%
+}
+
+% ================= KEY DEFINITIONS =================
+\define@key{luaanova}{headline}{\edef\luaanova@headline{\luastringN{#1}}}
+\define@key{luaanova}{midline}{\edef\luaanova@midline{\luastringN{#1}}}
+
+% ================= KEY DEFAULTS =================
+\setkeys{luaanova}{headline = }%
+\setkeys{luaanova}{midline = }%
+
+\newcommand{\luaOneWayAnova}[2][]{%
+\setkeys{luaanova}{#1}%
+\directlua{%
+tex.sprint(one_way_anova({#2}, \luaanova@headline, \luaanova@midline))
+}%
+}
+
+\endinput

@@ -1,0 +1,1552 @@
+% statistix.sty
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{luastats}[2024/11/24 Statistical Package in LuaLaTeX]
+\RequirePackage{amsmath}
+\RequirePackage[table]{xcolor}
+\RequirePackage{tikz}
+\RequirePackage{luacode}
+\RequirePackage{pgfplots} % For plotting graphs
+\pgfplotsset{compat=1.18}
+
+
+
+% Define the Lua functions in the preamble
+\begin{luacode*}
+	-- ==============Rounding Function=============
+	function round(value, decimal_places)
+	if not value or type(value) ~= "number" then return 0 end
+	if not decimal_places then decimal_places = 5 end
+	local multiplier = 10 ^ decimal_places
+	return math.floor(value * multiplier + 0.5) / multiplier
+	end
+	
+	-- ================Calculate the mean of an array============
+	function mean(array)
+	if not array or #array == 0 then return 0 end
+	local sum = 0
+	local count = 0
+	for _, v in ipairs(array) do
+	if type(v) == "number" then
+	sum = sum + v
+	count = count + 1
+	end
+	end
+	return count > 0 and round(sum / count) or 0
+	end
+	
+	-- =================Calculate the median of an array=============
+	function median(array)
+	if not array or #array == 0 then return 0 end
+	local valid_nums = {}
+	for _, v in ipairs(array) do
+	if type(v) == "number" then
+	table.insert(valid_nums, v)
+	end
+	end
+	if #valid_nums == 0 then return 0 end
+	
+	table.sort(valid_nums)
+	local n = #valid_nums
+	if n % 2 == 1 then
+	return valid_nums[math.floor((n + 1) / 2)]
+	else
+	return (valid_nums[n/2] + valid_nums[(n/2) + 1]) / 2
+	end
+	end
+	
+	-- ==================Calculate the mode of an array=================
+	function mode(array)
+	if not array or #array == 0 then return {0} end
+	local counts = {}
+	local valid_count = 0
+	
+	-- Count occurrences
+	for _, v in ipairs(array) do
+	if type(v) == "number" then
+	counts[v] = (counts[v] or 0) + 1
+	valid_count = valid_count + 1
+	end
+	end
+	
+	if valid_count == 0 then return {0} end
+	
+	-- Find mode(s)
+	local maxCount = 0
+	local modes = {}
+	for k, v in pairs(counts) do
+	if v > maxCount then
+	maxCount = v
+	modes = {k}
+	elseif v == maxCount then
+	table.insert(modes, k)
+	end
+	end
+	
+	return modes
+	end
+	
+	-- =====================Calculate the variance of an array================
+	function variance(array)
+	local avg = mean(array)
+	local sum = 0
+	for _, v in ipairs(array) do
+	sum = sum + (v - avg) ^ 2
+	end
+	return round(sum / #array,5)
+	end
+	
+	-- ================Calculate the standard deviation of an array===============
+	function standard_deviation(array)
+	return round(math.sqrt(variance(array)),5)
+	end
+	
+	-- ===================Calculate the range of an array===============
+	function range(array)
+	table.sort(array)
+	return array[#array] - array[1]
+	end
+	
+	-- ==============Calculate quartiles of an array===============
+	function quartiles(array)
+	table.sort(array)
+	local n = #array
+	local Q2 = median(array)
+	local Q1, Q3
+	if n % 2 == 0 then
+	Q1 = median({table.unpack(array, 1, n // 2)})
+	Q3 = median({table.unpack(array, n // 2 + 1, n)})
+	else
+	Q1 = median({table.unpack(array, 1, (n - 1) // 2)})
+	Q3 = median({table.unpack(array, (n + 3) // 2, n)})
+	end
+	return Q1, Q2, Q3
+	end
+	
+	-- =================Calculate interquartile range (IQR)==============
+	function iqr(array)
+	local q1, _, q3 = quartiles(array)
+	return q3 - q1
+	end
+	
+\end{luacode*}
+
+% Define LaTeX commands to call the Lua functions
+\newcommand{\luaMean}[1]{\directlua{tex.print(mean({#1}))}}
+\newcommand{\luaMedian}[1]{\directlua{tex.print(median({#1}))}}
+\newcommand{\luaMode}[1]{%
+\directlua{
+local modes = mode({#1})
+tex.print(table.concat(modes, ", "))
+}
+}
+\newcommand{\luaVariance}[1]{\directlua{tex.print(variance({#1}))}}
+\newcommand{\luaSD}[1]{\directlua{tex.print(standard_deviation({#1}))}}
+\newcommand{\luaRange}[1]{\directlua{tex.print(range({#1}))}}
+\newcommand{\luaQuartiles}[1]{%
+\directlua{
+local Q1, Q2, Q3 = quartiles({#1})
+tex.print("Q1: ", Q1, ", Q2: ", Q2, ", Q3: ", Q3)
+}
+}
+\newcommand{\luaIQR}[1]{\directlua{tex.print(iqr({#1}))}}
+
+% Functions for advanced statistics: Skewness and Kurtosis
+\begin{luacode*}
+-- ================ Calculate skewness =========
+function skewness(array)
+local n = #array
+local avg = mean(array)
+local sd = standard_deviation(array)
+local skew_sum = 0
+for _, v in ipairs(array) do
+skew_sum = skew_sum + ((v - avg) / sd) ^ 3
+end
+return (n / ((n - 1) * (n - 2))) * skew_sum
+end
+
+-- =========== Calculate kurtosis ===========
+function kurtosis(array)
+local n = #array
+local avg = mean(array)
+local sd = standard_deviation(array)
+local kurt_sum = 0
+for _, v in ipairs(array) do
+kurt_sum = kurt_sum + ((v - avg) / sd) ^ 4
+end
+return ((n * (n + 1)) / ((n - 1) * (n - 2) * (n - 3))) * kurt_sum - (3 * (n - 1) ^ 2) / ((n - 2) * (n - 3))
+end
+\end{luacode*}
+
+\newcommand{\luaSkewness}[1]{\directlua{tex.print(skewness({#1}))}}
+\newcommand{\luaKurtosis}[1]{\directlua{tex.print(kurtosis({#1}))}}
+
+% Correlation, covariance, linear regression, and t-test functions
+
+\begin{luacode*}
+-- ==========Compute Pearson correlation coefficient==============
+function correlation(array1, array2)
+local n = #array1
+local mean1 = mean(array1)
+local mean2 = mean(array2)
+local sum_xy, sum_x2, sum_y2 = 0, 0, 0
+
+for i = 1, n do
+sum_xy = sum_xy + (array1[i] - mean1) * (array2[i] - mean2)
+sum_x2 = sum_x2 + (array1[i] - mean1) ^ 2
+sum_y2 = sum_y2 + (array2[i] - mean2) ^ 2
+end
+
+return round(sum_xy / math.sqrt(sum_x2 * sum_y2),5)
+end
+
+-- ========================Compute covariance====================
+function covariance(array1, array2)
+local n = #array1
+local mean1 = mean(array1)
+local mean2 = mean(array2)
+local sum_cov = 0
+
+for i = 1, n do
+sum_cov = sum_cov + (array1[i] - mean1) * (array2[i] - mean2)
+end
+
+return round(sum_cov / (n - 1),5)
+end
+
+-- ==================Perform linear regression======================
+function linear_regression(array_x, array_y)
+local n = #array_x
+local mean_x = mean(array_x)
+local mean_y = mean(array_y)
+local sum_xy, sum_x2 = 0, 0
+
+for i = 1, n do
+sum_xy = sum_xy + (array_x[i] - mean_x) * (array_y[i] - mean_y)
+sum_x2 = sum_x2 + (array_x[i] - mean_x) ^ 2
+end
+
+local slope = sum_xy / sum_x2
+local intercept = mean_y - slope * mean_x
+
+return round(slope,5), round(intercept,5)
+end
+
+\end{luacode*}
+
+% Commands for statistical tests
+\newcommand{\luaCorrelation}[2]{\directlua{tex.print(correlation({#1}, {#2}))}}
+\newcommand{\luaCovariance}[2]{\directlua{tex.print(covariance({#1}, {#2}))}}
+\newcommand{\luaRegression}[2]{%
+\directlua{
+local slope, intercept = linear_regression({#1}, {#2})
+tex.print("Slope: ", slope, ", Intercept: ", intercept)
+}
+}
+
+% Chi-Square Test 
+\begin{luacode*}
+-- =========================Chi-Square Test==============
+function chi_square(observed, expected)
+local sum = 0
+for i = 1, #observed do
+local diff = observed[i] - expected[i]
+sum = sum + (diff ^ 2 / expected[i])
+end
+return round(sum,5)
+end
+
+-- ==================Exponential Moving Average (EMA)============
+function exponential_moving_average(array, alpha)
+local ema = array[1] -- Start EMA with the first element
+for i = 2, #array do
+ema = alpha * array[i] + (1 - alpha) * ema
+end
+return ema
+end
+
+--=================== Weighted Mean=====================
+function weighted_mean(array, weights)
+local sum_weighted_values = 0
+local sum_weights = 0
+for i = 1, #array do
+sum_weighted_values = sum_weighted_values + array[i] * weights[i]
+sum_weights = sum_weights + weights[i]
+end
+return sum_weighted_values / sum_weights
+end
+
+--=================== Z-Scores=================
+function z_scores(array)
+local avg = mean(array)
+local sd = standard_deviation(array)
+local z_scores_array = {}
+for _, v in ipairs(array) do
+table.insert(z_scores_array, round((v - avg)/sd,5))
+end
+return z_scores_array
+end
+
+\end{luacode*}
+
+% Commands for additional statistical tests
+\newcommand{\luaChiSquare}[2]{\directlua{tex.print(chi_square({#1}, {#2}))}}
+
+\newcommand{\luaEMA}[2]{\directlua{tex.print(exponential_moving_average({#1}, #2))}}
+\newcommand{\luaWeightedMean}[2]{\directlua{tex.print(weighted_mean({#1}, {#2}))}}
+\newcommand{\luaZScores}[1]{%
+\directlua{
+local z_scores_array = z_scores({#1})
+tex.print(table.concat(z_scores_array, ", "))
+}
+}
+
+%=================== Loading CSV data and summarizing it=================
+% Function to load CSV file
+\begin{luacode*}
+-- Load CSV Function
+function load_csv(filename)
+local file = io.open(filename, "r")
+if not file then
+tex.error("Could not open file: " .. filename)
+return {}
+end
+
+local data = {}
+for line in file:lines() do
+local row = {}
+for value in string.gmatch(line, "([^,]+)") do
+-- Try to convert to number, use 0 if fails
+local num = tonumber(value)
+if num then
+table.insert(row, num)
+else
+-- Handle non-numeric values
+tex.print("Warning: Non-numeric value found in CSV: " .. value)
+table.insert(row, 0)
+end
+end
+if #row > 0 then
+table.insert(data, row)
+end
+end
+file:close()
+return data
+end
+
+-- Advanced Statistics for CSV Columns
+function advanced_statistics_csv(filename)
+local data = load_csv(filename)
+if #data == 0 then
+tex.print("Error: No data found in the CSV file.")
+return ""
+end
+
+local results = {}
+
+-- Start LaTeX table with color enhancements
+local table_output = "\\renewcommand\\arraystretch{1.5}\\setlength\\tabcolsep{3pt}\\begin{tabular}{ccccccc}\\hline\n"
+table_output = table_output .. "\\rowcolor{gray!25}\\textbf{Column} & \\textbf{Mean} & \\textbf{Median} & \\textbf{Mode} & \\textbf{Variance} & \\textbf{Std Dev} & \\textbf{Range} \\\\"
+
+-- Compute statistics for each column
+for col = 1, #data[1] do
+local column_data = {}
+for row = 1, #data do
+table.insert(column_data, data[row][col])
+end
+
+-- Calculate statistics
+local mean_val = mean(column_data) or 0
+local median_val = median(column_data) or 0
+local mode_val = table.concat(mode(column_data) or {"N/A"}, ", ")
+local variance_val = variance(column_data) or 0
+local sd_val = standard_deviation(column_data) or 0
+local range_val = range(column_data) or 0
+
+-- Format row for LaTeX table
+table_output = table_output .. string.format(
+"%d & %.2f & %.2f & %s & %.2f & %.2f & %.2f \\\\\n",
+col, mean_val, median_val, mode_val, variance_val, sd_val, range_val
+)
+end
+
+-- End LaTeX table without an extra empty row
+table_output = table_output .."\\end{tabular}"
+return table_output
+end
+\end{luacode*}
+
+\newcommand{\luaCSVsummary}[1]{%
+\directlua{
+local table_output = advanced_statistics_csv("#1")
+tex.print(table_output)
+}
+}
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%Lua Stats Function 
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+% Bernoulli Distribution PMF
+\newcommand{\luabernoulliPMF}{
+\ensuremath{
+P(X = x) =
+\begin{cases}
+p, & x = 1 \\
+1 - p, & x = 0
+\end{cases}
+}
+}
+
+% Binomial Distribution PMF
+\newcommand{\luabinomialPMF}{
+\ensuremath{
+P(X = k) =
+\binom{n}{k} p^k (1 - p)^{n - k}, \quad k = 0, 1, \dots, n
+}
+}
+
+% Geometric Distribution PMF
+\newcommand{\luageometricPMF}{
+\ensuremath{
+P(X = k) =
+(1 - p)^{k-1} p, \quad k = 1, 2, 3, \dots
+}
+}
+
+% Negative Binomial Distribution PMF
+\newcommand{\luanegBinomialPMF}{
+\ensuremath{
+P(X = k) =
+\binom{k - 1}{r - 1} p^r (1 - p)^{k - r}, \quad k = r, r+1, \dots
+}
+}
+
+% Poisson Distribution PMF
+\newcommand{\luapoissonPMF}{
+\ensuremath{
+P(X = k) =
+\frac{\lambda^k e^{-\lambda}}{k!}, \quad k = 0, 1, 2, \dots
+}
+}
+
+% Hypergeometric Distribution PMF
+\newcommand{\luahypergeometricPMF}{
+\ensuremath{
+P(X = k) =
+\frac{\binom{K}{k} \binom{N - K}{n - k}}{\binom{N}{n}}, \quad \max(0, n - (N-K)) \leq k \leq \min(n, K)
+}
+}
+
+% Discrete Uniform Distribution PMF
+\newcommand{\luadiscreteUniformPMF}{
+\ensuremath{
+P(X = x) =
+\frac{1}{n}, \quad x = 1, 2, \dots, n
+}
+}
+
+% Multinomial Distribution PMF
+\newcommand{\luamultinomialPMF}{
+\ensuremath{
+P(X_1 = k_1, \dots, X_m = k_m) =
+\frac{n!}{k_1! k_2! \dots k_m!} p_1^{k_1} p_2^{k_2} \dots p_m^{k_m}
+}
+}
+
+% Zipf Distribution PMF
+\newcommand{\luazipfPMF}{
+\ensuremath{
+P(X = k) =
+\frac{k^{-\alpha}}{\zeta(\alpha)}, \quad k = 1, 2, 3, \dots
+}
+}
+
+% Negative Hypergeometric Distribution PMF
+\newcommand{\luanegHypergeometricPMF}{
+\ensuremath{
+P(X = k) =
+\frac{\binom{k-1}{r-1} \binom{N-k}{K-r}}{\binom{N}{K}}, \quad k = r, r+1, \dots, N-K+r
+}
+}
+
+
+% =============================== PDF Function =========================================
+
+% Uniform Distribution
+\newcommand{\luauniPDF}{
+\ensuremath{
+f(x) =
+\begin{cases} 
+\frac{1}{b - a}, & a \leq x \leq b \\ 
+0, & \text{otherwise} 
+\end{cases}
+}
+}
+
+% Normal (Gaussian) Distribution
+\newcommand{\luanormalPDF}{
+\ensuremath{
+f(x) =
+\frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{(x - \mu)^2}{2\sigma^2}}
+}
+}
+
+% Exponential Distribution
+\newcommand{\luaexpPDF}{
+\ensuremath{
+f(x) =
+\begin{cases}
+\lambda e^{-\lambda x}, & x \geq 0 \\
+0, & x < 0
+\end{cases}
+}
+}
+
+% Gamma Distribution
+\newcommand{\luagammaPDF}{
+\ensuremath{
+f(x) =
+\begin{cases}
+\frac{\lambda^k x^{k-1} e^{-\lambda x}}{\Gamma(k)}, & x > 0 \\
+0, & x \leq 0
+\end{cases}
+}
+}
+
+% Beta Distribution
+\newcommand{\luabetaPDF}{
+\ensuremath{
+f(x) =
+\begin{cases}
+\frac{x^{\alpha-1} (1-x)^{\beta-1}}{B(\alpha, \beta)}, & 0 \leq x \leq 1 \\
+0, & \text{otherwise}
+\end{cases}
+}
+}
+
+% Cauchy Distribution
+\newcommand{\luacauchyPDF}{
+\ensuremath{
+f(x) =
+\frac{1}{\pi \gamma} \left[ 1 + \left( \frac{x - x_0}{\gamma} \right)^2 \right]^{-1}
+}
+}
+
+% Laplace Distribution
+\newcommand{\lualaplacePDF}{
+\ensuremath{
+f(x) =
+\frac{1}{2b} e^{-\frac{|x - \mu|}{b}}
+}
+}
+
+% Student's t Distribution
+\newcommand{\luastudentTPDF}{
+\ensuremath{
+f(x) =
+\frac{\Gamma\left(\frac{\nu+1}{2}\right)}
+{\sqrt{\nu\pi} \Gamma\left(\frac{\nu}{2}\right)}
+\left(1 + \frac{x^2}{\nu} \right)^{-\frac{\nu+1}{2}}
+}
+}
+
+% Weibull Distribution
+\newcommand{\luaweibullPDF}{
+\ensuremath{
+f(x) =
+\begin{cases}
+\frac{k}{\lambda} \left(\frac{x}{\lambda}\right)^{k-1} e^{-(x/\lambda)^k}, & x \geq 0 \\
+0, & x < 0
+\end{cases}
+}
+}
+
+% Pareto Distribution
+\newcommand{\luaparetoPDF}{
+\ensuremath{
+f(x) =
+\begin{cases}
+\frac{\alpha x_m^\alpha}{x^{\alpha+1}}, & x \geq x_m \\
+0, & x < x_m
+\end{cases}
+}
+}
+
+% Rayleigh Distribution
+\newcommand{\luarayleighPDF}{
+\ensuremath{
+f(x) =
+\begin{cases}
+\frac{x}{\sigma^2} e^{-\frac{x^2}{2\sigma^2}}, & x \geq 0 \\
+0, & x < 0
+\end{cases}
+}
+}
+
+% Log-Normal Distribution
+\newcommand{\lualognormalPDF}{
+\ensuremath{
+f(x) =
+\begin{cases}
+\frac{1}{x \sigma \sqrt{2\pi}} e^{-\frac{(\ln x - \mu)^2}{2\sigma^2}}, & x > 0 \\
+0, & x \leq 0
+\end{cases}
+}
+}
+
+
+% ============================== CDF Function ====================================
+% Uniform Distribution CDF
+\newcommand{\luauniCDF}{
+\ensuremath{
+F(x) =
+\begin{cases} 
+0, & x < a \\
+\frac{x - a}{b - a}, & a \leq x \leq b \\ 
+1, & x > b
+\end{cases}
+}
+}
+
+% Normal (Gaussian) Distribution CDF
+\newcommand{\luanormalCDF}{
+\ensuremath{
+F(x) = \frac{1}{2} \left[ 1 + \operatorname{erf} \left( \frac{x - \mu}{\sigma \sqrt{2}} \right) \right]
+}
+}
+
+% Exponential Distribution CDF
+\newcommand{\luaexpCDF}{
+\ensuremath{
+F(x) =
+\begin{cases}
+1 - e^{-\lambda x}, & x \geq 0 \\
+0, & x < 0
+\end{cases}
+}
+}
+
+% Gamma Distribution CDF
+\newcommand{\luagammaCDF}{
+\ensuremath{
+F(x) =
+\begin{cases}
+\frac{\gamma(k, \lambda x)}{\Gamma(k)}, & x > 0 \\
+0, & x \leq 0
+\end{cases}
+}
+}
+
+% Beta Distribution CDF
+\newcommand{\luabetaCDF}{
+\ensuremath{
+F(x) =
+\begin{cases}
+I_x(\alpha, \beta), & 0 \leq x \leq 1 \\
+0, & x < 0 \\
+1, & x > 1
+\end{cases}
+}
+}
+
+% Cauchy Distribution CDF
+\newcommand{\luacauchyCDF}{
+\ensuremath{
+F(x) = \frac{1}{\pi} \tan^{-1} \left( \frac{x - x_0}{\gamma} \right) + \frac{1}{2}
+}
+}
+
+% Laplace Distribution CDF
+\newcommand{\lualaplaceCDF}{
+\ensuremath{
+F(x) =
+\begin{cases}
+\frac{1}{2} e^{\frac{x - \mu}{b}}, & x < \mu \\
+1 - \frac{1}{2} e^{-\frac{x - \mu}{b}}, & x \geq \mu
+\end{cases}
+}
+}
+
+% Student's t Distribution CDF
+\newcommand{\luastudentTCDF}{
+\ensuremath{
+F(x) = I_{t}( \frac{\nu}{2}, \frac{1}{2} )
+}
+}
+
+% Weibull Distribution CDF
+\newcommand{\luaweibullCDF}{
+\ensuremath{
+F(x) =
+\begin{cases}
+1 - e^{-(x/\lambda)^k}, & x \geq 0 \\
+0, & x < 0
+\end{cases}
+}
+}
+
+% Pareto Distribution CDF
+\newcommand{\luaparetoCDF}{
+\ensuremath{
+F(x) =
+\begin{cases}
+1 - \left(\frac{x_m}{x}\right)^\alpha, & x \geq x_m \\
+0, & x < x_m
+\end{cases}
+}
+}
+
+% Rayleigh Distribution CDF
+\newcommand{\luarayleighCDF}{
+\ensuremath{
+F(x) =
+\begin{cases}
+1 - e^{-\frac{x^2}{2\sigma^2}}, & x \geq 0 \\
+0, & x < 0
+\end{cases}
+}
+}
+
+% Log-Normal Distribution CDF
+\newcommand{\lualognormalCDF}{
+\ensuremath{
+F(x) =
+\begin{cases}
+\frac{1}{2} \left[ 1 + \operatorname{erf} \left( \frac{\ln x - \mu}{\sigma \sqrt{2}} \right) \right], & x > 0 \\
+0, & x \leq 0
+\end{cases}
+}
+}
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Uing MetaMethods 
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+\begin{luacode*}
+-- Define rounding function
+function round(value, decimal_places)
+if not value or type(value) ~= "number" then return 0 end
+if not decimal_places then decimal_places = 5 end
+local multiplier = 10 ^ decimal_places
+return math.floor(value * multiplier + 0.5) / multiplier
+end
+
+-- Define dataset object with enhanced statistical methods
+local Dataset = {}
+
+function Dataset.new(data_str)
+local self = { data = {} }
+for num in string.gmatch(data_str, "([^,]+)") do
+table.insert(self.data, tonumber(num))
+end
+setmetatable(self, { __index = Dataset })
+return self
+end
+
+function Dataset:mean()
+local sum = 0
+local count = 0
+for _, v in ipairs(self.data) do
+sum = sum + v
+count = count + 1
+end
+return round(sum / count, 3)
+end
+
+function Dataset:median()
+local data = { table.unpack(self.data) }
+table.sort(data)
+local n = #data
+if n % 2 == 1 then
+return data[math.ceil(n / 2)]
+else
+return round((data[n / 2] + data[n / 2 + 1]) / 2, 3)
+end
+end
+
+function Dataset:mode()
+local counts = {}
+for _, v in ipairs(self.data) do
+counts[v] = (counts[v] or 0) + 1
+end
+local max_count = 0
+local modes = {}
+for k, v in pairs(counts) do
+if v > max_count then
+max_count = v
+modes = { k }
+elseif v == max_count then
+table.insert(modes, k)
+end
+end
+return table.concat(modes, ", ")
+end
+
+function Dataset:variance()
+local avg = self:mean()
+local sum = 0
+for _, v in ipairs(self.data) do
+sum = sum + (v - avg) ^ 2
+end
+return round(sum / #self.data, 5)
+end
+
+function Dataset:standard_deviation()
+return round(math.sqrt(self:variance()), 5)
+end
+
+function Dataset:skewness()
+local n = #self.data
+local avg = self:mean()
+local sd = self:standard_deviation()
+local skew_sum = 0
+for _, v in ipairs(self.data) do
+skew_sum = skew_sum + ((v - avg) / sd) ^ 3
+end
+return round((n / ((n - 1) * (n - 2))) * skew_sum, 5)
+end
+
+function Dataset:kurtosis()
+local n = #self.data
+local avg = self:mean()
+local sd = self:standard_deviation()
+local kurt_sum = 0
+for _, v in ipairs(self.data) do
+kurt_sum = kurt_sum + ((v - avg) / sd) ^ 4
+end
+return round(((n * (n + 1)) / ((n - 1) * (n - 2) * (n - 3))) * kurt_sum - (3 * (n - 1) ^ 2) / ((n - 2) * (n - 3)), 5)
+end
+
+function Dataset:range()
+local data = { table.unpack(self.data) }
+table.sort(data)
+return round(data[#data] - data[1], 5)
+end
+
+function Dataset:quartiles()
+local data = { table.unpack(self.data) }
+table.sort(data)
+local n = #data
+local q2 = self:median()
+local q1, q3
+if n % 2 == 0 then
+q1 = Dataset.new(table.concat(data, ",", 1, n / 2)):median()
+q3 = Dataset.new(table.concat(data, ",", n / 2 + 1)):median()
+else
+q1 = Dataset.new(table.concat(data, ",", 1, math.floor(n / 2))):median()
+q3 = Dataset.new(table.concat(data, ",", math.ceil(n / 2) + 1)):median()
+end
+return q1, q2, q3
+end
+
+function Dataset:iqr()
+local q1, _, q3 = self:quartiles()
+return round(q3 - q1, 5)
+end
+
+-- Global datasets registry
+local datasets = {}
+
+function define_dataset(name, data_str)
+datasets[name] = Dataset.new(data_str)
+end
+
+function call_method(name, method)
+local obj = datasets[name]
+if not obj then
+tex.sprint("Dataset not found!")
+return
+end
+
+if obj[method] then
+-- Call the method and handle multiple or single return values
+local success, result1, result2, result3 = pcall(obj[method], obj)
+if not success then
+tex.sprint("Error: " .. result1) -- Print any error message
+return
+end
+
+if method == "quartiles" then
+-- Handle quartiles specifically
+tex.sprint(string.format("Q1: %.5f, Q2: %.5f, Q3: %.5f", result1, result2, result3))
+else
+-- Single return value or comma-separated values
+tex.sprint(result1)
+end
+else
+tex.sprint("Method not found!")
+end
+end
+
+\end{luacode*}
+
+
+\newcommand{\DataSet}[2]{%
+\directlua{
+define_dataset("#1", "#2")
+}%
+}
+
+\newcommand{\luastat}[2]{%
+\directlua{
+call_method("#1", "#2")
+}%
+}
+
+\begin{luacode*}
+% =============================== 2 DATA ===============================
+
+-- Advanced Statistical Analysis Class
+local StatAnalysis = {}
+
+-- Rounding function (moved outside the class)
+function round(num, decimals)
+local power = 10^decimals
+return math.floor(num * power + 0.5) / power
+end
+
+-- Constructor for two datasets
+function StatAnalysis.new(data1_str, data2_str)
+local self = {
+dataset1 = {},
+dataset2 = {}
+}
+
+-- Parse first dataset
+for num in string.gmatch(data1_str, "([^,]+)") do
+local num_val = tonumber(num)
+if num_val then
+table.insert(self.dataset1, num_val)
+else
+error("Non-numeric value found in dataset1: " .. num)
+end
+end
+
+-- Parse second dataset
+for num in string.gmatch(data2_str, "([^,]+)") do
+local num_val = tonumber(num)
+if num_val then
+table.insert(self.dataset2, num_val)
+else
+error("Non-numeric value found in dataset2: " .. num)
+end
+end
+
+setmetatable(self, { __index = StatAnalysis })
+return self
+end
+
+-- Utility functions
+function StatAnalysis:validate_datasets()
+if #self.dataset1 == 0 or #self.dataset2 == 0 then
+error("Datasets cannot be empty")
+end
+if #self.dataset1 ~= #self.dataset2 then
+error("Datasets must have equal length")
+end
+if #self.dataset1 < 2 then
+error("Datasets must contain at least 2 elements")
+end
+end
+
+function StatAnalysis:calculate_mean(dataset)
+local sum = 0
+for _, v in ipairs(dataset) do
+sum = sum + v
+end
+return sum / #dataset
+end
+
+function StatAnalysis:calculate_variance(dataset)
+local mean = self:calculate_mean(dataset)
+local sum_sq_diff = 0
+for _, v in ipairs(dataset) do
+sum_sq_diff = sum_sq_diff + (v - mean)^2
+end
+return sum_sq_diff / (#dataset - 1)
+end
+
+-- Statistical Methods
+function StatAnalysis:correlation()
+self:validate_datasets()
+local mean1 = self:calculate_mean(self.dataset1)
+local mean2 = self:calculate_mean(self.dataset2)
+local sum_xy, sum_x2, sum_y2 = 0, 0, 0
+
+for i = 1, #self.dataset1 do
+local x_diff = self.dataset1[i] - mean1
+local y_diff = self.dataset2[i] - mean2
+sum_xy = sum_xy + x_diff * y_diff
+sum_x2 = sum_x2 + x_diff^2
+sum_y2 = sum_y2 + y_diff^2
+end
+
+return round(sum_xy / math.sqrt(sum_x2 * sum_y2), 5)
+end
+
+function StatAnalysis:covariance()
+self:validate_datasets()
+local mean1 = self:calculate_mean(self.dataset1)
+local mean2 = self:calculate_mean(self.dataset2)
+local sum_cov = 0
+
+for i = 1, #self.dataset1 do
+sum_cov = sum_cov + (self.dataset1[i] - mean1) * (self.dataset2[i] - mean2)
+end
+
+return round(sum_cov / (#self.dataset1 - 1), 5)
+end
+
+function StatAnalysis:linear_regression()
+self:validate_datasets()
+local mean_x = self:calculate_mean(self.dataset1)
+local mean_y = self:calculate_mean(self.dataset2)
+local sum_xy, sum_x2 = 0, 0
+
+for i = 1, #self.dataset1 do
+local x_diff = self.dataset1[i] - mean_x
+local y_diff = self.dataset2[i] - mean_y
+sum_xy = sum_xy + x_diff * y_diff
+sum_x2 = sum_x2 + x_diff^2
+end
+
+local slope = sum_xy / sum_x2
+local intercept = mean_y - slope * mean_x
+
+return round(slope, 5), round(intercept, 5)
+end
+
+-- Global registry for datasets
+local stat_analyses = {}
+
+-- LaTeX interface functions
+function define_stat_analysis(name, data1_str, data2_str)
+if stat_analyses[name] then
+tex.print("Error: Dataset name already exists!")
+return
+end
+stat_analyses[name] = StatAnalysis.new(data1_str, data2_str)
+tex.print("Dataset " .. name .. " defined.")
+end
+
+function call_two_dataset_method(name, method)
+local obj = stat_analyses[name]
+if not obj then
+tex.print("Error: Statistical analysis not found!")
+return
+end
+
+local success, result1, result2 = pcall(function() return obj[method](obj) end)
+
+if not success then
+tex.print("Error: " .. tostring(result1))
+return
+end
+
+-- Handle different method return scenarios
+if method == "correlation" or method == "covariance" then
+tex.print("Result: " .. tostring(result1))
+elseif method == "linear_regression" then
+tex.print(string.format("Slope: %.5f, Intercept: %.5f", result1, result2))
+else
+tex.print("Unsupported method!")
+end
+end
+
+\end{luacode*}
+
+\newcommand{\DefineStatAnalysis}[3]{%
+\directlua{define_stat_analysis("#1", "#2", "#3")}%
+}
+
+\newcommand{\StatMethod}[2]{%
+\directlua{call_two_dataset_method("#1", "#2")}%
+}
+
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Rondom number gennerator 
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+\begin{luacode*}
+-- Helper for factorial calculation
+local function factorial(n)
+if n == 0 then return 1 end
+local fact = 1
+for i = 1, n do
+fact = fact * i
+end
+return fact
+end
+
+-- Generate random numbers for Normal Distribution
+function random_normal(mean, std_dev, n)
+local pi = math.pi
+local function box_muller()
+local u1 = math.random()
+local u2 = math.random()
+local z0 = math.sqrt(-2 * math.log(u1)) * math.cos(2 * pi * u2)
+return z0
+end
+
+local result = {}
+for _ = 1, n do
+local z = box_muller()
+local value = mean + std_dev * z
+table.insert(result, value)
+end
+return result
+end
+
+-- Generate random numbers for Uniform Distribution
+function random_uniform(a, b, n)
+local result = {}
+for _ = 1, n do
+local value = a + (b - a) * math.random()
+table.insert(result, value)
+end
+return result
+end
+
+-- Generate random numbers for Exponential Distribution
+function random_exponential(lambda, n)
+local result = {}
+for _ = 1, n do
+local u = math.random()
+local value = -math.log(1 - u) / lambda
+table.insert(result, value)
+end
+return result
+end
+
+-- Generate random numbers for Binomial Distribution
+function random_binomial(n, p, samples)
+local result = {}
+for _ = 1, samples do
+local count = 0
+for _ = 1, n do
+if math.random() < p then
+count = count + 1
+end
+end
+table.insert(result, count)
+end
+return result
+end
+
+-- Generate random numbers for Poisson Distribution
+function random_poisson(lambda, samples)
+local result = {}
+for _ = 1, samples do
+local l = math.exp(-lambda)
+local k = 0
+local p = 1
+repeat
+k = k + 1
+p = p * math.random()
+until p <= l
+table.insert(result, k - 1)
+end
+return result
+end
+
+-- Generate random numbers for Chi-square Distribution
+function random_chisquare(df, samples)
+local result = {}
+for _ = 1, samples do
+local sum = 0
+for _ = 1, df do
+local z = random_normal(0, 1, 1)[1]
+sum = sum + z^2
+end
+table.insert(result, sum)
+end
+return result
+end
+
+-- Generate random numbers for t-Distribution
+function random_t(df, samples)
+local result = {}
+for _ = 1, samples do
+local z = random_normal(0, 1, 1)[1]
+local chi = random_chisquare(df, 1)[1]
+local value = z / math.sqrt(chi / df)
+table.insert(result, value)
+end
+return result
+end
+
+-- Generate random numbers for F-Distribution
+function random_f(df1, df2, samples)
+local result = {}
+for _ = 1, samples do
+local chi1 = random_chisquare(df1, 1)[1] / df1
+local chi2 = random_chisquare(df2, 1)[1] / df2
+local value = chi1 / chi2
+table.insert(result, value)
+end
+return result
+end
+
+-- Print Lua table as LaTeX-readable list
+function print_random_numbers(numbers)
+for _, num in ipairs(numbers) do
+tex.sprint(string.format("%0.4f, ", num))
+end
+end
+\end{luacode*}
+
+% Commands for generating random numbers
+\newcommand{\luarandomnormal}[3]{%
+\directlua{
+local numbers = random_normal(#1, #2, #3)
+print_random_numbers(numbers)
+}%
+}
+
+\newcommand{\luarandomuniform}[3]{%
+\directlua{
+local numbers = random_uniform(#1, #2, #3)
+print_random_numbers(numbers)
+}%
+}
+
+\newcommand{\luarandomexponential}[2]{%
+\directlua{
+local numbers = random_exponential(#1, #2)
+print_random_numbers(numbers)
+}%
+}
+
+\newcommand{\luarandombinomial}[3]{%
+\directlua{
+local numbers = random_binomial(#1, #2, #3)
+print_random_numbers(numbers)
+}%
+}
+
+\newcommand{\luarandompoisson}[2]{%
+\directlua{
+local numbers = random_poisson(#1, #2)
+print_random_numbers(numbers)
+}%
+}
+
+\newcommand{\luarandomchisquare}[2]{%
+\directlua{
+local numbers = random_chisquare(#1, #2)
+print_random_numbers(numbers)
+}%
+}
+
+\newcommand{\luarandomt}[2]{%
+\directlua{
+local numbers = random_t(#1, #2)
+print_random_numbers(numbers)
+}%
+}
+
+\newcommand{\luarandomf}[3]{%
+\directlua{
+local numbers = random_f(#1, #2, #3)
+print_random_numbers(numbers)
+}%
+}
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%Lua PLots 
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+\begin{luacode*}
+-- Helper function for numerical integration
+function integrate(func, range, step)
+local x = tonumber(range[1])
+local x_end = tonumber(range[2])
+local area = 0
+while x <= x_end do
+area = area + func(x) * step
+x = x + step
+end
+return area
+end
+
+-- Lua function for Normal Distribution
+function normal_pdf(x, mean, std_dev)
+local pi = math.pi
+local exp = math.exp
+return (1 / (std_dev * math.sqrt(2 * pi))) * exp(-0.5 * ((x - mean) / std_dev)^2)
+end
+
+function generate_normal_pdf(mean, std_dev, range, step)
+local coords = ""
+local x = tonumber(range[1])
+local x_end = tonumber(range[2])
+while x <= x_end do
+local y = normal_pdf(x, mean, std_dev)
+coords = coords .. string.format("(%f,%f)", x, y)
+x = x + step
+end
+tex.print(coords)
+end
+
+function generate_normal_cdf(mean, std_dev, range, step)
+local coords = ""
+local x = tonumber(range[1])
+local x_end = tonumber(range[2])
+while x <= x_end do
+local y = integrate(function(t) return normal_pdf(t, mean, std_dev) end, {range[1], x}, step)
+coords = coords .. string.format("(%f,%f)", x, y)
+x = x + step
+end
+tex.print(coords)
+end
+
+-- Lua function for Uniform Distribution
+function uniform_pdf(x, a, b)
+return (x >= a and x <= b) and (1 / (b - a)) or 0
+end
+
+function generate_uniform_pdf(a, b, range, step)
+local coords = ""
+local x = tonumber(range[1])
+local x_end = tonumber(range[2])
+while x <= x_end do
+local y = uniform_pdf(x, a, b)
+coords = coords .. string.format("(%f,%f)", x, y)
+x = x + step
+end
+tex.print(coords)
+end
+
+function generate_uniform_cdf(a, b, range, step)
+local coords = ""
+local x = tonumber(range[1])
+local x_end = tonumber(range[2])
+while x <= x_end do
+local y = integrate(function(t) return uniform_pdf(t, a, b) end, {range[1], x}, step)
+coords = coords .. string.format("(%f,%f)", x, y)
+x = x + step
+end
+tex.print(coords)
+end
+
+-- Lua function for Exponential Distribution
+function exponential_pdf(x, lambda)
+return (x >= 0) and (lambda * math.exp(-lambda * x)) or 0
+end
+
+function generate_exponential_pdf(lambda, range, step)
+local coords = ""
+local x = tonumber(range[1])
+local x_end = tonumber(range[2])
+while x <= x_end do
+local y = exponential_pdf(x, lambda)
+coords = coords .. string.format("(%f,%f)", x, y)
+x = x + step
+end
+tex.print(coords)
+end
+
+function generate_exponential_cdf(lambda, range, step)
+local coords = ""
+local x = tonumber(range[1])
+local x_end = tonumber(range[2])
+while x <= x_end do
+local y = integrate(function(t) return exponential_pdf(t, lambda) end, {range[1], x}, step)
+coords = coords .. string.format("(%f,%f)", x, y)
+x = x + step
+end
+tex.print(coords)
+end
+
+\end{luacode*}
+
+% Commands for Normal Distribution
+\newcommand{\luanormpdf}[4]{
+\begin{tikzpicture}
+\begin{axis}[
+grid=major,
+xlabel={X},
+ylabel={PDF},
+title={Normal Distribution - PDF},
+width=10cm,
+height=6cm
+]
+\addplot[smooth, thick, blue] coordinates {
+\directlua{generate_normal_pdf(#1, #2, {#3}, #4)}
+};
+\end{axis}
+\end{tikzpicture}
+}
+
+\newcommand{\luanormcdf}[4]{
+\begin{tikzpicture}
+\begin{axis}[
+grid=major,
+xlabel={X},
+ylabel={CDF},
+title={Normal Distribution - CDF},
+width=10cm,
+height=6cm
+]
+\addplot[smooth, thick, red] coordinates {
+\directlua{generate_normal_cdf(#1, #2, {#3}, #4)}
+};
+\end{axis}
+\end{tikzpicture}
+}
+
+% Commands for Uniform Distribution
+\newcommand{\luaunipdf}[3]{
+\begin{tikzpicture}
+\begin{axis}[
+grid=major,
+xlabel={X},
+ylabel={PDF},
+title={Uniform Distribution - PDF},
+width=10cm,
+height=6cm
+]
+\addplot[smooth, thick, green] coordinates {
+\directlua{generate_uniform_pdf(#1, #2, {#3}, 0.1)}
+};
+\end{axis}
+\end{tikzpicture}
+}
+
+\newcommand{\luaunicdf}[3]{
+\begin{tikzpicture}
+\begin{axis}[
+grid=major,
+xlabel={X},
+ylabel={CDF},
+title={Uniform Distribution - CDF},
+width=10cm,
+height=6cm
+]
+\addplot[smooth, thick, orange] coordinates {
+\directlua{generate_uniform_cdf(#1, #2, {#3}, 0.1)}
+};
+\end{axis}
+\end{tikzpicture}
+}
+
+% Commands for Exponential Distribution
+\newcommand{\luaexppdf}[3]{
+\begin{tikzpicture}
+\begin{axis}[
+grid=major,
+xlabel={X},
+ylabel={PDF},
+title={Exponential Distribution - PDF},
+width=10cm,
+height=6cm
+]
+\addplot[smooth, thick, violet] coordinates {
+\directlua{generate_exponential_pdf(#1, {#2}, #3)}
+};
+\end{axis}
+\end{tikzpicture}
+}
+
+\newcommand{\luaexpcdf}[3]{
+\begin{tikzpicture}
+\begin{axis}[
+grid=major,
+xlabel={X},
+ylabel={CDF},
+title={Exponential Distribution - CDF},
+width=10cm,
+height=6cm
+]
+\addplot[smooth, thick, purple] coordinates {
+\directlua{generate_exponential_cdf(#1, {#2}, #3)}
+};
+\end{axis}
+\end{tikzpicture}
+}
+
+\begin{luacode*}
+-- Helper function to generate histogram data
+function generate_histogram(data, bins, range)
+local min_val = range[1]
+local max_val = range[2]
+local bin_width = (max_val - min_val) / bins
+local hist = {}
+for i = 1, bins do
+hist[i] = 0
+end
+for _, value in ipairs(data) do
+if value >= min_val and value <= max_val then
+local bin_index = math.floor((value - min_val) / bin_width) + 1
+if bin_index > bins then
+bin_index = bins
+end
+hist[bin_index] = hist[bin_index] + 1
+end
+end
+return hist, bin_width
+end
+
+-- Helper function to generate KDE-like smoothed curve
+function generate_kde(data, range, step)
+local coords = ""
+local x = tonumber(range[1])
+local x_end = tonumber(range[2])
+while x <= x_end do
+local y = 0
+for _, value in ipairs(data) do
+y = y + math.exp(-0.5 * ((x - value) / 0.2)^2) -- Gaussian kernel
+end
+coords = coords .. string.format("(%f,%f)", x, y)
+x = x + step
+end
+tex.print(coords)
+end
+
+-- Function to generate distplot
+function generate_distplot(data, bins, range, step)
+local hist, bin_width = generate_histogram(data, bins, range)
+local coords_hist = ""
+for i = 1, bins do
+local x = range[1] + (i - 1) * bin_width
+local y = hist[i]
+coords_hist = coords_hist .. string.format("(%f,%f)", x, y)
+end
+tex.print("\\addplot[ybar, fill=blue!30, draw=blue] coordinates {" .. coords_hist .. "};")
+tex.print("\\addplot[smooth, thick, red] coordinates {" .. generate_kde(data, range, step) .. "};")
+end
+\end{luacode*}
+
+% Command to create a distplot
+\newcommand{\luadistplot}[4]{
+\begin{tikzpicture}
+\begin{axis}[
+xlabel={X},
+ylabel={Density},
+title={Distplot},
+width=10cm,
+height=10cm,
+ybar interval,
+enlargelimits=false
+]
+\directlua{generate_distplot({#1}, #2, {#3}, #4)}
+\end{axis}
+\end{tikzpicture}
+}
+
+
+
+
+
+
+
+
+
